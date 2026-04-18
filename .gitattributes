@@ -1,1 +1,44 @@
-# ========================================================= # UNITY SMART MERGING # Put in project root # ========================================================= # Use LF endings * text=auto eol=lf # Unity scene / prefab smart merge *.unity merge=unityyamlmerge eol=lf *.prefab merge=unityyamlmerge eol=lf *.asset merge=unityyamlmerge eol=lf *.meta merge=unityyamlmerge eol=lf *.mat merge=unityyamlmerge eol=lf *.anim merge=unityyamlmerge eol=lf *.controller merge=unityyamlmerge eol=lf # Code files *.cs text diff=csharp *.shader text *.cginc text *.compute text *.json text *.xml text *.yml text *.yaml text *.txt text # Binary assets *.png binary *.jpg binary *.jpeg binary *.gif binary *.psd binary *.tga binary *.fbx binary *.blend binary *.wav binary *.mp3 binary *.ogg binary *.mp4 binary *.mov binary
+# =========================================================
+# UNITY TEAM .gitattributes
+# Smart merge + proper line endings
+# Put in project root
+# =========================================================
+
+# Normalize text files
+* text=auto eol=lf
+
+# Unity smart merge files
+*.unity      merge=unityyamlmerge eol=lf
+*.prefab     merge=unityyamlmerge eol=lf
+*.asset      merge=unityyamlmerge eol=lf
+*.meta       merge=unityyamlmerge eol=lf
+*.mat        merge=unityyamlmerge eol=lf
+*.anim       merge=unityyamlmerge eol=lf
+*.controller merge=unityyamlmerge eol=lf
+
+# Code / text
+*.cs     text diff=csharp
+*.shader text
+*.cginc  text
+*.compute text
+*.json   text
+*.xml    text
+*.yml    text
+*.yaml   text
+*.txt    text
+
+# Binary assets
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.psd  binary
+*.tga  binary
+*.fbx  binary
+*.blend binary
+*.wav  binary
+*.mp3  binary
+*.ogg  binary
+*.mp4  binary
+*.mov  binary
+```

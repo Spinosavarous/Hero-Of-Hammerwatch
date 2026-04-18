@@ -17,9 +17,12 @@ public class PlayerMovement : MonoBehaviour
 
 	[Header("Mobile")]
 	[SerializeField] private FixedJoystick joystick;
-	
+
 	[Header("Combat")]
 	[SerializeField] private float attackCooldown = 0.4f;
+	[SerializeField] private float attackRadius = 1.5f;
+	[SerializeField] private float attackForce = 12f;
+	[SerializeField] private LayerMask hitLayers;
 
 	private Rigidbody2D rb;
 	private Vector2 movement;
@@ -38,26 +41,18 @@ public class PlayerMovement : MonoBehaviour
 	{
 		rb = GetComponent<Rigidbody2D>();
 		animator = GetComponent<Animator>();
-		
+
 		slash = GetComponentsInChildren<ParticleSystem>()[0];
 		slash.Stop();
 
 		inputActions = new PlayerInputActions();
 
 		isMobile = Application.isMobilePlatform;
-
 		currentSpeed = moveSpeed;
 	}
 
-	void OnEnable()
-	{
-		inputActions.Enable();
-	}
-
-	void OnDisable()
-	{
-		inputActions.Disable();
-	}
+	void OnEnable() => inputActions.Enable();
+	void OnDisable() => inputActions.Disable();
 
 	void Update()
 	{
@@ -96,46 +91,11 @@ public class PlayerMovement : MonoBehaviour
 		FaceRotationHandling();
 	}
 
-	// inputs
+	// ---------------- INPUT ----------------
+
 	void HandlePCInput()
 	{
 		movement = inputActions.Player.Move.ReadValue<Vector2>().normalized;
-	}
-
-	private void HandleAttackInput()
-	{
-		if (attackTimer > 0)
-		{
-			attackTimer -= Time.deltaTime;
-			return;
-		}
-
-		bool attackPressed = inputActions.Player.Attack.triggered;
-
-		if (attackPressed && !isAttacking)
-		{
-			Attack();
-		}
-	}
-
-	private void Attack()
-	{
-		isAttacking = true;
-		attackTimer = attackCooldown;
-
-		slash.Play();
-
-		animator.Play("Attack2");
-
-		stamina.value -= 3f;
-		stamina.value = Mathf.Clamp(stamina.value, 0, stamina.maxValue);
-
-		StartCoroutine(AttackEnd());
-	}
-
-	public void EndAttack()
-	{
-		isAttacking = false;
 	}
 
 	void HandleMobileInput()
@@ -149,7 +109,74 @@ public class PlayerMovement : MonoBehaviour
 		movement = new Vector2(joystick.Horizontal, joystick.Vertical).normalized;
 	}
 
-	//speed
+	// ---------------- ATTACK ----------------
+
+	private void HandleAttackInput()
+	{
+		if (attackTimer > 0)
+		{
+			attackTimer -= Time.deltaTime;
+			return;
+		}
+
+		if (inputActions.Player.Attack.triggered && !isAttacking)
+		{
+			Attack();
+		}
+	}
+
+	private void Attack()
+	{
+		isAttacking = true;
+		attackTimer = attackCooldown;
+
+		slash.Play();
+		animator.Play("Attack2");
+
+		stamina.value -= 3f;
+		stamina.value = Mathf.Clamp(stamina.value, 0, stamina.maxValue);
+
+		HitTargets();
+
+		StartCoroutine(AttackEnd());
+	}
+
+	private void HitTargets()
+	{
+		Collider2D[] hits = Physics2D.OverlapCircleAll(
+			transform.position,
+			attackRadius,
+			hitLayers
+		);
+
+		foreach (Collider2D hit in hits)
+		{
+			if (hit.CompareTag("Obstacle") || hit.CompareTag("Enemy"))
+			{
+				Rigidbody2D targetRb = hit.GetComponent<Rigidbody2D>();
+
+				if (targetRb != null)
+				{
+					Vector2 dir = (hit.transform.position - transform.position).normalized;
+
+					if (dir == Vector2.zero)
+						dir = transform.right;
+
+					targetRb.AddForce(dir * attackForce, ForceMode2D.Impulse);
+				}
+			}
+		}
+	}
+
+	private IEnumerator AttackEnd()
+	{
+		yield return new WaitForSeconds(0.8f);
+		isAttacking = false;
+		slash.Stop();
+	}
+
+	// ---------------- MOVEMENT SPEED ----------------
+
 	private void HandleMovementSpeed()
 	{
 		bool isMoving = movement.magnitude > 0.1f;
@@ -157,20 +184,17 @@ public class PlayerMovement : MonoBehaviour
 		bool isSprinting = false;
 
 		if (!isMobile)
-		{
 			isSprinting = inputActions.Player.Sprint.IsPressed() && isMoving;
-		}
 		else
-		{
 			isSprinting = movement.magnitude > 0.9f;
-		}
 
 		isSprinting = isSprinting && canSprint;
 
 		currentSpeed = isSprinting ? runSpeed : moveSpeed;
 	}
 
-	//Animation
+	// ---------------- ANIMATION ----------------
+
 	private void UpdateAnimator()
 	{
 		bool isMoving = movement.magnitude > 0.1f;
@@ -181,7 +205,8 @@ public class PlayerMovement : MonoBehaviour
 		animator.SetBool("IsRunning", isRunning);
 	}
 
-	//Stamina check
+	// ---------------- STAMINA ----------------
+
 	private void HandleStamina()
 	{
 		if (movement.magnitude < 0.1f)
@@ -194,10 +219,9 @@ public class PlayerMovement : MonoBehaviour
 		if (currentSpeed == runSpeed)
 		{
 			stamina.value -= Time.deltaTime * 30f;
+
 			if (stamina.value <= 0)
-			{
 				currentSpeed = moveSpeed;
-			}
 		}
 		else
 		{
@@ -206,23 +230,20 @@ public class PlayerMovement : MonoBehaviour
 		}
 	}
 
-	//rotation
+	// ---------------- ROTATION ----------------
+
 	private void FaceRotationHandling()
 	{
 		if (movement.x > 0.01f)
-		{
 			transform.rotation = Quaternion.Euler(0f, 0f, 0f);
-		}
 		else if (movement.x < -0.01f)
-		{
 			transform.rotation = Quaternion.Euler(0f, 180f, 0f);
-		}
 	}
 
-	private IEnumerator AttackEnd()
+	// Show attack radius in editor
+	private void OnDrawGizmosSelected()
 	{
-		yield return new WaitForSeconds(0.8f);
-		isAttacking = false;
-		slash.Stop();
+		Gizmos.color = Color.red;
+		Gizmos.DrawWireSphere(transform.position, attackRadius);
 	}
 }

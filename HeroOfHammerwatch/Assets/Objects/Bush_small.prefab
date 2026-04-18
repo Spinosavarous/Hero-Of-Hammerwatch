@@ -104,4 +104,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9eb8a626ed5aa57429e023db6c29e142, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapZSort
-  offset: 0
+  offset: 30

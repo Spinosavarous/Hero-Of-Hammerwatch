@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,8 +10,21 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private float moveSpeed = 5f;
 	[SerializeField] private float runSpeed = 6.5f;
 
+	[Header("Stats")]
+	[SerializeField] private PlayerStats playerStats;
+	[SerializeField] private float currentHp;
+	[SerializeField] private float attackDamage;
+
 	[Header("Movement UI")]
 	[SerializeField] private Slider stamina;
+	[SerializeField] private Slider healthBar;
+
+	[SerializeField] private TextMeshProUGUI stamina_text;
+	[SerializeField] private TextMeshProUGUI health_text;
+
+	[Header("Damage Text")]
+	[SerializeField] private TextMeshPro damageTextPrefab;
+	[SerializeField] private Vector3 damageOffset = new Vector3(0, 1.5f, 0);
 
 	[Header("Movement Smoothing")]
 	[SerializeField] private float acceleration = 20f;
@@ -37,6 +51,9 @@ public class PlayerMovement : MonoBehaviour
 	private float attackTimer;
 	private ParticleSystem slash;
 
+	private bool sprintLocked = false;
+
+
 	void Awake()
 	{
 		rb = GetComponent<Rigidbody2D>();
@@ -49,6 +66,16 @@ public class PlayerMovement : MonoBehaviour
 
 		isMobile = Application.isMobilePlatform;
 		currentSpeed = moveSpeed;
+
+		if (playerStats == null)
+		{
+			playerStats = new PlayerStats(1);
+		}
+
+		currentHp = playerStats.maxHealth;
+		stamina.maxValue = playerStats.stamina;
+		stamina.value = playerStats.stamina;
+		attackDamage = playerStats.attack;
 	}
 
 	void OnEnable() => inputActions.Enable();
@@ -89,6 +116,15 @@ public class PlayerMovement : MonoBehaviour
 		);
 
 		FaceRotationHandling();
+	}
+
+	// ---------------- UI ----------------
+	private void LateUpdate()
+	{
+		healthBar.value = currentHp;
+		stamina.value = stamina.value;
+		stamina_text.text = Mathf.RoundToInt(stamina.value).ToString() + "/" + Mathf.RoundToInt(stamina.maxValue).ToString();
+		health_text.text = Mathf.RoundToInt(currentHp).ToString() + "/" + Mathf.RoundToInt(playerStats.maxHealth).ToString();
 	}
 
 	// ---------------- INPUT ----------------
@@ -151,21 +187,96 @@ public class PlayerMovement : MonoBehaviour
 
 		foreach (Collider2D hit in hits)
 		{
-			if (hit.CompareTag("Obstacle") || hit.CompareTag("Enemy"))
+			if (hit.CompareTag("Obstacle") || hit.CompareTag("Enemy") || hit.CompareTag("Nest"))
 			{
 				Rigidbody2D targetRb = hit.GetComponent<Rigidbody2D>();
+				EnemyMovement enemy = hit.GetComponent<EnemyMovement>();
+				EnemySpawner nest = hit.GetComponent<EnemySpawner>();
 
-				if (targetRb != null)
+				if (targetRb != null && !hit.CompareTag("Enemy"))
 				{
 					Vector2 dir = (hit.transform.position - transform.position).normalized;
 
 					if (dir == Vector2.zero)
 						dir = transform.right;
 
-					targetRb.AddForce(dir * attackForce, ForceMode2D.Impulse);
+					targetRb.AddForce(dir * attackForce * 20, ForceMode2D.Impulse);
+				}
+
+				if (enemy != null)
+				{
+					enemy.TakeDamage(attackDamage);
+
+					ShowDamageText(
+						attackDamage,
+						enemy.transform.position + damageOffset
+					);
+				}
+
+				if (nest != null)
+				{
+					nest.TakeDamage(attackDamage);
+					ShowDamageText(
+						attackDamage,
+						nest.transform.position + damageOffset
+					);
 				}
 			}
 		}
+	}
+
+	// ---------------- SHOW DAMAGE TEXT ----------------
+
+	private void ShowDamageText(float damage, Vector3 worldPos)
+	{
+		if (damageTextPrefab == null)
+			return;
+
+		TextMeshPro txt = Instantiate(
+			damageTextPrefab,
+			worldPos,
+			Quaternion.identity
+		);
+
+		txt.text = "-" + Mathf.RoundToInt(damage);
+
+		Vector3 randomOffset = new Vector3(
+			Random.Range(-0.25f, 0.25f),
+			Random.Range(-0.1f, 0.1f),
+			0f
+		);
+
+		txt.transform.position += randomOffset;
+
+		StartCoroutine(FloatingDamageText(txt));
+	}
+
+	private IEnumerator FloatingDamageText(TextMeshPro txt)
+	{
+		float time = 0f;
+		float duration = 1f;
+
+		Color color = txt.color;
+
+		Vector3 start = txt.transform.position;
+		Vector3 end = start + Vector3.up * 1.2f;
+
+		while (time < duration)
+		{
+			time += Time.deltaTime;
+
+			float t = time / duration;
+
+			txt.transform.position =
+				Vector3.Lerp(start, end, t);
+
+			color.a = Mathf.Lerp(1f, 0f, t);
+			txt.color = color;
+
+			yield return null;
+		}
+
+		Destroy(txt.gameObject);
 	}
 
 	private IEnumerator AttackEnd()
@@ -209,24 +320,34 @@ public class PlayerMovement : MonoBehaviour
 
 	private void HandleStamina()
 	{
-		if (movement.magnitude < 0.1f)
+		float percent = stamina.value / stamina.maxValue;
+
+		if (percent <= 0.20f)
+			sprintLocked = true;
+
+		if (percent >= 0.50f)
+			sprintLocked = false;
+
+		bool isMoving = movement.magnitude >= 0.1f;
+
+		if (!isMoving)
 		{
 			stamina.value += Time.deltaTime * 10f;
 			stamina.value = Mathf.Clamp(stamina.value, 0, stamina.maxValue);
 			return;
 		}
 
-		if (currentSpeed == runSpeed)
+		if (currentSpeed == runSpeed && !sprintLocked)
 		{
 			stamina.value -= Time.deltaTime * 30f;
-
-			if (stamina.value <= 0)
-				currentSpeed = moveSpeed;
+			stamina.value = Mathf.Clamp(stamina.value, 0, stamina.maxValue);
 		}
 		else
 		{
 			stamina.value += Time.deltaTime * 10f;
 			stamina.value = Mathf.Clamp(stamina.value, 0, stamina.maxValue);
+
+			currentSpeed = moveSpeed;
 		}
 	}
 
@@ -238,6 +359,33 @@ public class PlayerMovement : MonoBehaviour
 			transform.rotation = Quaternion.Euler(0f, 0f, 0f);
 		else if (movement.x < -0.01f)
 			transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+	}
+
+	// ---------------- Take Damage ----------------
+	public void TakeDamage(float damage, Vector3 enemy)
+	{
+		currentHp -= damage;
+
+		StartCoroutine(KnockBackEffect((transform.position - enemy).normalized * damage * 0.5f));
+
+		if (currentHp <= 0)
+		{
+			currentHp = 0;
+			Die();
+		}
+	}
+
+	private IEnumerator KnockBackEffect(Vector2 force)
+	{
+		yield return new WaitForSeconds(0.1f);
+
+		rb.AddForce(force, ForceMode2D.Impulse);
+	}
+
+	public void Die()
+	{
+		animator.Play("Death");
+		this.enabled = false;
 	}
 
 	// Show attack radius in editor

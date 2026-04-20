@@ -21,4 +21,4 @@ MonoBehaviour:
   mass: 1
   knockbackResistance: 0
   xpReward: 10
-  goldReward: 5
+  goldReward: 2

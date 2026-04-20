@@ -38,6 +38,13 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private float attackForce = 12f;
 	[SerializeField] private LayerMask hitLayers;
 
+	[Header("XP")]
+	[SerializeField] private Slider xpSlider;
+	[SerializeField] private int playerLevel = 1;
+	[SerializeField] private TextMeshProUGUI levelText;
+	[SerializeField] private float currentXP = 0f;
+	[SerializeField] private TextMeshProUGUI xpText;
+
 	private Rigidbody2D rb;
 	private Vector2 movement;
 
@@ -76,6 +83,9 @@ public class PlayerMovement : MonoBehaviour
 		stamina.maxValue = playerStats.stamina;
 		stamina.value = playerStats.stamina;
 		attackDamage = playerStats.attack;
+
+		xpSlider.maxValue = GetXPRequired(playerLevel);
+		xpSlider.value = currentXP;
 	}
 
 	void OnEnable() => inputActions.Enable();
@@ -95,18 +105,16 @@ public class PlayerMovement : MonoBehaviour
 
 		HandleMovementSpeed();
 		UpdateAnimator();
+
+		if (attackTimer > 0)
+			attackTimer -= Time.deltaTime;
+
 		HandleAttackInput();
 		HandleStamina();
 	}
 
 	void FixedUpdate()
 	{
-		if (isAttacking)
-		{
-			rb.linearVelocity = Vector2.zero;
-			return;
-		}
-
 		Vector2 targetVelocity = movement * currentSpeed;
 
 		rb.linearVelocity = Vector2.MoveTowards(
@@ -125,8 +133,67 @@ public class PlayerMovement : MonoBehaviour
 		stamina.value = stamina.value;
 		stamina_text.text = Mathf.RoundToInt(stamina.value).ToString() + "/" + Mathf.RoundToInt(stamina.maxValue).ToString();
 		health_text.text = Mathf.RoundToInt(currentHp).ToString() + "/" + Mathf.RoundToInt(playerStats.maxHealth).ToString();
+		xpSlider.value = currentXP;
+
+		if (xpText != null)
+		{
+			xpText.text =
+				Mathf.RoundToInt(currentXP) + " / " +
+				Mathf.RoundToInt(xpSlider.maxValue);
+		}
+
+		levelText.text = playerLevel.ToString();
 	}
 
+
+	private int GetXPRequired(int level)
+	{
+		return 50 + (level * level * 15);
+	}
+
+	private void LevelUp()
+	{
+		playerLevel++;
+
+		xpSlider.maxValue = GetXPRequired(playerLevel);
+
+		Debug.Log("Level Up! Level: " + playerLevel);
+
+		playerStats.maxHealth += 10;
+		playerStats.attack += 2f;
+		playerStats.stamina += 5f;
+
+		currentHp = playerStats.maxHealth;
+		healthBar.maxValue = playerStats.maxHealth;
+
+		attackDamage = playerStats.attack;
+
+		stamina.maxValue = playerStats.stamina;
+		stamina.value = playerStats.stamina;
+	}
+
+	public void GainXP(float amount)
+	{
+		currentXP += amount;
+
+		while (currentXP >= xpSlider.maxValue)
+		{
+			currentXP -= xpSlider.maxValue;
+			LevelUp();
+		}
+
+		xpSlider.value = currentXP;
+	}
+
+	private void OnTriggerEnter2D(Collider2D other)
+	{
+		if (other.CompareTag("XP"))
+		{
+			GainXP(other.GetComponent<XpScript>().GetStrength());
+
+			Destroy(other.gameObject);
+		}
+	}
 	// ---------------- INPUT ----------------
 
 	void HandlePCInput()
@@ -149,13 +216,7 @@ public class PlayerMovement : MonoBehaviour
 
 	private void HandleAttackInput()
 	{
-		if (attackTimer > 0)
-		{
-			attackTimer -= Time.deltaTime;
-			return;
-		}
-
-		if (inputActions.Player.Attack.triggered && !isAttacking)
+		if (inputActions.Player.Attack.triggered && attackTimer <= 0 && !isAttacking)
 		{
 			Attack();
 		}
@@ -281,8 +342,10 @@ public class PlayerMovement : MonoBehaviour
 
 	private IEnumerator AttackEnd()
 	{
-		yield return new WaitForSeconds(0.8f);
+		yield return new WaitForSeconds(0.3f);
 		isAttacking = false;
+
+		yield return new WaitForSeconds(0.5f);
 		slash.Stop();
 	}
 
@@ -385,10 +448,16 @@ public class PlayerMovement : MonoBehaviour
 	public void Die()
 	{
 		animator.Play("Death");
-		this.enabled = false;
+
+		StartCoroutine(WaitDie());
 	}
 
-	// Show attack radius in editor
+	IEnumerator WaitDie()
+	{
+		yield return new WaitForSeconds(2f);
+		enabled = false;
+	}
+
 	private void OnDrawGizmosSelected()
 	{
 		Gizmos.color = Color.red;

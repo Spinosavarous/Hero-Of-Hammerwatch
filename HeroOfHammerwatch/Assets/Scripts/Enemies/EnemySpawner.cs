@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
@@ -13,10 +14,25 @@ public class EnemySpawner : MonoBehaviour
 	[SerializeField] private float spawnInterval = 3f;
 	[SerializeField] private int maxAliveEnemies = 5;
 
+	[Header("Destroy Settings")]
+	[SerializeField] private int enemiesToKillForDestruction = 10;
+	[SerializeField] private bool destroyWhenEnemiesKilled = true;
+
 	[Header("Effects")]
 	[SerializeField] private ParticleSystem destroyEffect;
 
+	[Header("UI")]
+	[SerializeField] private TextMeshPro killCounterText;
+
+	[Header("Activation")]
+	[SerializeField] private float activationRange = 15f;
+	[SerializeField] private bool showActivationRange = true;
+
+	private bool playerInRange = false;
+
+	private GameObject Player;
 	private int aliveEnemies = 0;
+	private int enemiesKilled = 0;
 	private bool destroyed = false;
 
 	private Coroutine spawnRoutine;
@@ -30,7 +46,23 @@ public class EnemySpawner : MonoBehaviour
 
 	void Start()
 	{
+		Player = GameObject.FindGameObjectWithTag("Player");
 		spawnRoutine = StartCoroutine(SpawnLoop());
+
+		UpdateKillCounterText();
+	}
+
+	void Update()
+	{
+		if (Player == null || destroyed) return;
+
+		float distance = Vector2.Distance(transform.position, Player.transform.position);
+		playerInRange = distance <= activationRange;
+
+		if (killCounterText != null)
+		{
+			killCounterText.gameObject.SetActive(playerInRange);
+		}
 	}
 
 	// ---------------- SPAWN LOOP ----------------
@@ -40,6 +72,9 @@ public class EnemySpawner : MonoBehaviour
 		while (!destroyed)
 		{
 			yield return new WaitForSeconds(spawnInterval);
+
+			if (!playerInRange)
+				continue;
 
 			if (aliveEnemies >= maxAliveEnemies)
 				continue;
@@ -97,13 +132,13 @@ public class EnemySpawner : MonoBehaviour
 
 	private void DestroyNest()
 	{
+		if (destroyed)
+			return;
+
 		destroyed = true;
 
 		if (spawnRoutine != null)
 			StopCoroutine(spawnRoutine);
-
-		if (destroyEffect != null)
-			destroyEffect.Play();
 
 		CheckAreaClear();
 	}
@@ -113,11 +148,27 @@ public class EnemySpawner : MonoBehaviour
 	public void EnemyDied()
 	{
 		aliveEnemies--;
+		enemiesKilled++;
 
 		if (aliveEnemies < 0)
 			aliveEnemies = 0;
 
+		UpdateKillCounterText();
+
+		if (destroyWhenEnemiesKilled && !destroyed && enemiesKilled >= enemiesToKillForDestruction)
+		{
+			DestroyNest();
+		}
+
 		CheckAreaClear();
+	}
+
+	private void UpdateKillCounterText()
+	{
+		if (killCounterText != null)
+		{
+			killCounterText.text = $"{enemiesKilled} / {enemiesToKillForDestruction}";
+		}
 	}
 
 	// ---------------- CLEAR CHECK ----------------
@@ -136,11 +187,8 @@ public class EnemySpawner : MonoBehaviour
 	{
 		Debug.Log(name + " area cleared!");
 
-		// Example:
-		// spawn loot
-		// open gate
-		// give xp
-		// destroy object
+		if (destroyEffect != null)
+			destroyEffect.Play();
 
 		Destroy(gameObject, 1f);
 	}
@@ -157,5 +205,12 @@ public class EnemySpawner : MonoBehaviour
 			: transform.position;
 
 		Gizmos.DrawWireSphere(pos, 0.4f);
+
+		if (showActivationRange)
+		{
+			Gizmos.color = new Color(0, 1, 0, 0.3f);
+			Gizmos.DrawWireSphere(transform.position, activationRange);
+		}
+
 	}
 }

@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
@@ -21,6 +22,10 @@ public class PlayerMovement : MonoBehaviour
 
 	[SerializeField] private TextMeshProUGUI stamina_text;
 	[SerializeField] private TextMeshProUGUI health_text;
+
+	[Header("Map")]
+	[SerializeField] private GameObject map;
+	[SerializeField] private Button map_close_Button;
 
 	[Header("Damage Text")]
 	[SerializeField] private TextMeshPro damageTextPrefab;
@@ -45,6 +50,10 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private float currentXP = 0f;
 	[SerializeField] private TextMeshProUGUI xpText;
 
+	[Header("Gold")]
+	[SerializeField] public int gold = 0;
+	[SerializeField] private TextMeshProUGUI goldText;
+
 	private Rigidbody2D rb;
 	private Vector2 movement;
 
@@ -59,7 +68,6 @@ public class PlayerMovement : MonoBehaviour
 	private ParticleSystem slash;
 
 	private bool sprintLocked = false;
-
 
 	void Awake()
 	{
@@ -86,6 +94,23 @@ public class PlayerMovement : MonoBehaviour
 
 		xpSlider.maxValue = GetXPRequired(playerLevel);
 		xpSlider.value = currentXP;
+
+		map.SetActive(false);
+	}
+
+	void Start()
+	{
+		Cursor.lockState = CursorLockMode.Locked;
+		Cursor.visible = false;
+
+		map_close_Button.onClick.AddListener(() =>{ 
+			map.SetActive(false);
+
+			Cursor.lockState = CursorLockMode.Locked;
+			Cursor.visible = false;
+
+			Time.timeScale = 1f;
+		});
 	}
 
 	void OnEnable() => inputActions.Enable();
@@ -111,6 +136,16 @@ public class PlayerMovement : MonoBehaviour
 
 		HandleAttackInput();
 		HandleStamina();
+
+		if (Keyboard.current.mKey.wasPressedThisFrame)
+		{
+			map.SetActive(!map.activeSelf);
+
+			Cursor.lockState = map.activeSelf ? CursorLockMode.None : CursorLockMode.Locked;
+			Cursor.visible = map.activeSelf;
+
+			Time.timeScale = map.activeSelf ? 0f : 1f;
+		}
 	}
 
 	void FixedUpdate()
@@ -134,6 +169,7 @@ public class PlayerMovement : MonoBehaviour
 		stamina_text.text = Mathf.RoundToInt(stamina.value).ToString() + "/" + Mathf.RoundToInt(stamina.maxValue).ToString();
 		health_text.text = Mathf.RoundToInt(currentHp).ToString() + "/" + Mathf.RoundToInt(playerStats.maxHealth).ToString();
 		xpSlider.value = currentXP;
+		goldText.text = gold.ToString();
 
 		if (xpText != null)
 		{
@@ -145,6 +181,10 @@ public class PlayerMovement : MonoBehaviour
 		levelText.text = playerLevel.ToString();
 	}
 
+	public void AddGold(int amount)
+	{
+		gold += amount;
+	}
 
 	private int GetXPRequired(int level)
 	{

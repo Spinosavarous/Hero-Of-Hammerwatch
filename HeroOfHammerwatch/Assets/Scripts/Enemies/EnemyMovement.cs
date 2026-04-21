@@ -44,7 +44,7 @@ public class EnemyMovement : MonoBehaviour
 	public void TakeDamage(float damage)
 	{
 		currentHp -= damage;
-		ParticleSystem p = Instantiate(bloodEffect, transform.position, Quaternion.identity);
+		ParticleSystem p = Instantiate(bloodEffect, transform.position, transform.rotation);
 		p.Play();
 
 		Destroy(p.gameObject, 2);

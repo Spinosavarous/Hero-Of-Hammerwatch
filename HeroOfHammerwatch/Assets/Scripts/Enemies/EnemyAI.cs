@@ -11,8 +11,11 @@ public class EnemyAI : MonoBehaviour
 	[SerializeField] private float stopDistance = 0.8f;
 	[SerializeField] private float acceleration = 12f;
 
-	private Animator animator;
+	[Header("Avoidance")]
+	[SerializeField] private float avoidCheckDistance = 0.8f;
+	[SerializeField] private float sideCheckAngle = 45f;
 
+	private Animator animator;
 	private Rigidbody2D rb;
 
 	void Awake()
@@ -40,9 +43,11 @@ public class EnemyAI : MonoBehaviour
 
 		float distance = Vector2.Distance(transform.position, player.position);
 
+		// ATTACK STATE
 		if (distance <= stats.attackRange)
 		{
 			rb.linearVelocity = Vector2.zero;
+			animator.SetBool("isMoving", false);
 
 			if (enemy.CanAttack())
 			{
@@ -54,9 +59,10 @@ public class EnemyAI : MonoBehaviour
 			return;
 		}
 
+		// MOVE STATE
 		if (distance > stopDistance)
 		{
-			Vector2 dir = (player.position - transform.position).normalized;
+			Vector2 dir = GetSmartDirection();
 
 			Vector2 targetVelocity = dir * stats.moveSpeed;
 
@@ -67,13 +73,57 @@ public class EnemyAI : MonoBehaviour
 			);
 
 			animator.SetBool("isMoving", true);
-
 			FacePlayer();
 		}
 		else
 		{
 			rb.linearVelocity = Vector2.zero;
+			animator.SetBool("isMoving", false);
 		}
+	}
+
+	private Vector2 GetSmartDirection()
+	{
+		Vector2 toPlayer = (player.position - transform.position).normalized;
+
+		if (!IsBlocked(toPlayer))
+			return toPlayer;
+
+		Vector2 left = Quaternion.Euler(0, 0, sideCheckAngle) * toPlayer;
+		Vector2 right = Quaternion.Euler(0, 0, -sideCheckAngle) * toPlayer;
+
+		bool leftFree = !IsBlocked(left);
+		bool rightFree = !IsBlocked(right);
+
+		if (leftFree && !rightFree)
+			return left;
+
+		if (rightFree && !leftFree)
+			return right;
+
+		if (leftFree && rightFree)
+			return Random.value > 0.5f ? left : right;
+
+		return Vector2.Perpendicular(toPlayer);
+	}
+
+	private bool IsBlocked(Vector2 direction)
+	{
+		RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, avoidCheckDistance);
+
+		if (hit.collider == null)
+			return false;
+
+		if (hit.collider.gameObject == gameObject)
+			return false;
+
+		if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Enemy"))
+			return false;
+
+		if (hit.collider.isTrigger)
+			return false;
+
+		return true;
 	}
 
 	private void AttackPlayer()
@@ -81,14 +131,15 @@ public class EnemyAI : MonoBehaviour
 		Debug.Log(enemy.GetStats().enemyName + " attacked player!");
 
 		animator.SetTrigger("attack");
-		player.GetComponent<PlayerMovement>().TakeDamage(enemy.GetStats().damage, transform.position);
+		player.GetComponent<PlayerMovement>()
+			.TakeDamage(enemy.GetStats().damage, transform.position);
 	}
 
 	private void FacePlayer()
 	{
 		if (player.position.x > transform.position.x)
-			transform.rotation = Quaternion.Euler(0, 0, 0);
-		else
 			transform.rotation = Quaternion.Euler(0, 180, 0);
+		else
+			transform.rotation = Quaternion.Euler(0, 0, 0);
 	}
 }

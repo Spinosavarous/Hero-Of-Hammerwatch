@@ -3,18 +3,24 @@ using UnityEngine;
 public class MinimapCam : MonoBehaviour
 {
 	public Transform player;
-	public bool followRotation = false;
+	public float smoothSpeed = 8f;
 
 	void LateUpdate()
 	{
-		if (player != null)
-		{
-			transform.position = new Vector3(player.position.x, player.position.y,-10);
+		if (player == null) return;
 
-			if (followRotation)
-			{
-				transform.rotation = Quaternion.Euler(90f, player.eulerAngles.y, 0f);
-			}
-		}
+		Vector3 target =
+			new Vector3(
+				player.position.x,
+				player.position.y,
+				-10f
+			);
+
+		transform.position =
+			Vector3.Lerp(
+				transform.position,
+				target,
+				Time.deltaTime * smoothSpeed
+			);
 	}
 }

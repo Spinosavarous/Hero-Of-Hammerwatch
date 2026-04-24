@@ -233,6 +233,11 @@ public class PlayerMovement : MonoBehaviour
 
 			Destroy(other.gameObject);
 		}
+		else if (other.CompareTag("Gold"))
+		{
+			AddGold(1);
+			Destroy(other.gameObject);
+		}
 	}
 	// ---------------- INPUT ----------------
 
@@ -267,7 +272,7 @@ public class PlayerMovement : MonoBehaviour
 		isAttacking = true;
 		attackTimer = attackCooldown;
 
-		slash.Play();
+
 		animator.Play("Attack2");
 
 		stamina.value -= 3f;
@@ -382,6 +387,9 @@ public class PlayerMovement : MonoBehaviour
 
 	private IEnumerator AttackEnd()
 	{
+		yield return new WaitForSeconds(0.1f);
+		slash.Play();
+
 		yield return new WaitForSeconds(0.3f);
 		isAttacking = false;
 

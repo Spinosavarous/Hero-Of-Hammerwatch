@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Flying Bug
   maxHp: 150
-  moveSpeed: 5
+  moveSpeed: 4
   damage: 20
   attackRange: 2
   attackCooldown: 2
   mass: 1
   knockbackResistance: 0.2
   xpReward: 25
-  goldReward: 5
+  goldReward: 3

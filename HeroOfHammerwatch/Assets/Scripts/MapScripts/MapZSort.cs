@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class MapZSort : MonoBehaviour
 {
-	public int offset = 0; // optional fine-tuning
+	public int offset = 0;
+	public int basePriority = 10;
 
 	private Renderer rend;
 
@@ -13,6 +14,7 @@ public class MapZSort : MonoBehaviour
 
 	void LateUpdate()
 	{
-		rend.sortingOrder = (int)(-transform.position.y * 100) + offset;
+		int ySort = Mathf.RoundToInt(-transform.position.y * 100);
+		rend.sortingOrder = basePriority + ySort + offset;
 	}
 }

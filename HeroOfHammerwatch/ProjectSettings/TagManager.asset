@@ -9,6 +9,7 @@ TagManager:
   - Nest
   - XP
   - Chest
+  - Gold
   layers:
   - Default
   - TransparentFX

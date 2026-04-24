@@ -4,7 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class EnemyMovement : MonoBehaviour
 {
-    [SerializeField] private EnemyStats stats;
+	[SerializeField] private EnemyStats stats;
 
 	[Header("Blood Effect")]
 	[SerializeField] private ParticleSystem bloodEffect;
@@ -12,19 +12,22 @@ public class EnemyMovement : MonoBehaviour
 	[Header("XP")]
 	[SerializeField] private GameObject xpPrefab;
 
+	[Header("Gold")]
+	[SerializeField] private GameObject goldPrefab;
+
 	private Rigidbody2D rb;
 
-    [SerializeField] private float currentHp;
-    private float attackTimer;
+	[SerializeField] private float currentHp;
+	private float attackTimer;
 
 	private EnemySpawner spawner;
 	private bool isDead = false;
 	void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
+	{
+		rb = GetComponent<Rigidbody2D>();
 
-        currentHp = stats.maxHp;
-        rb.mass = stats.mass;
+		currentHp = stats.maxHp;
+		rb.mass = stats.mass;
 	}
 
 	void Update()
@@ -48,7 +51,7 @@ public class EnemyMovement : MonoBehaviour
 		p.Play();
 
 		Destroy(p.gameObject, 2);
-		
+
 		StartCoroutine(AttackKnockBack((transform.position - GameObject.FindGameObjectWithTag("Player").transform.position).normalized * damage * 0.5f));
 
 		if (currentHp <= 0)
@@ -79,6 +82,7 @@ public class EnemyMovement : MonoBehaviour
 		isDead = true;
 
 		SpawnXP();
+		SpawnGold();
 
 		if (spawner != null)
 			spawner.EnemyDied();
@@ -88,19 +92,35 @@ public class EnemyMovement : MonoBehaviour
 
 	private void SpawnXP()
 	{
-		for (int i = 0; i < stats.xpReward; i++ )
+		for (int i = 0; i < stats.xpReward; i++)
 		{
 			GameObject xp = Instantiate(xpPrefab, transform.position, Quaternion.identity);
-
 			xp.tag = "XP";
 
 			Rigidbody2D rb = xp.GetComponent<Rigidbody2D>();
 			if (rb != null)
 			{
 				Vector2 randomDirection = Random.insideUnitCircle.normalized;
-
 				float forceAmount = Random.Range(3f, 8f);
+				rb.AddForce(randomDirection * forceAmount, ForceMode2D.Impulse);
+			}
+		}
+	}
 
+	private void SpawnGold()
+	{
+		if (goldPrefab == null) return;
+
+		for (int i = 0; i < stats.goldReward; i++)
+		{
+			GameObject gold = Instantiate(goldPrefab, transform.position, Quaternion.identity);
+			gold.tag = "Gold";
+
+			Rigidbody2D rb = gold.GetComponent<Rigidbody2D>();
+			if (rb != null)
+			{
+				Vector2 randomDirection = Random.insideUnitCircle.normalized;
+				float forceAmount = Random.Range(3f, 8f);
 				rb.AddForce(randomDirection * forceAmount, ForceMode2D.Impulse);
 			}
 		}

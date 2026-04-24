@@ -18,6 +18,10 @@ public class EnemySpawner : MonoBehaviour
 	[SerializeField] private int enemiesToKillForDestruction = 10;
 	[SerializeField] private bool destroyWhenEnemiesKilled = true;
 
+	[Header("Respawn Settings")]
+	[SerializeField] private float respawnTime = 10f;
+	[SerializeField] private GameObject[] glowObjects; // Assign the two children here
+
 	[Header("Effects")]
 	[SerializeField] private ParticleSystem destroyEffect;
 
@@ -34,8 +38,10 @@ public class EnemySpawner : MonoBehaviour
 	private int aliveEnemies = 0;
 	private int enemiesKilled = 0;
 	private bool destroyed = false;
+	private bool isRespawning = false;
 
 	private Coroutine spawnRoutine;
+	private Coroutine respawnRoutine;
 
 	// ---------------- START ----------------
 
@@ -54,13 +60,15 @@ public class EnemySpawner : MonoBehaviour
 
 	void Update()
 	{
-		if (Player == null || destroyed) return;
+		if (Player == null) return;
+		if (destroyed || isRespawning) return;
 
 		float distance = Vector2.Distance(transform.position, Player.transform.position);
 		playerInRange = distance <= activationRange;
 
 		if (killCounterText != null)
 		{
+			// Only show counter when player is in range and nest is active
 			killCounterText.gameObject.SetActive(playerInRange);
 		}
 	}
@@ -69,7 +77,7 @@ public class EnemySpawner : MonoBehaviour
 
 	private IEnumerator SpawnLoop()
 	{
-		while (!destroyed)
+		while (!destroyed && !isRespawning)
 		{
 			yield return new WaitForSeconds(spawnInterval);
 
@@ -116,7 +124,7 @@ public class EnemySpawner : MonoBehaviour
 
 	public void TakeDamage(float damage)
 	{
-		if (destroyed)
+		if (destroyed || isRespawning)
 			return;
 
 		currentHP -= damage;
@@ -128,11 +136,11 @@ public class EnemySpawner : MonoBehaviour
 		}
 	}
 
-	// ---------------- DESTROY ----------------
+	// ---------------- DESTROY (Start Respawn) ----------------
 
 	private void DestroyNest()
 	{
-		if (destroyed)
+		if (destroyed || isRespawning)
 			return;
 
 		destroyed = true;
@@ -155,7 +163,7 @@ public class EnemySpawner : MonoBehaviour
 
 		UpdateKillCounterText();
 
-		if (destroyWhenEnemiesKilled && !destroyed && enemiesKilled >= enemiesToKillForDestruction)
+		if (destroyWhenEnemiesKilled && !destroyed && !isRespawning && enemiesKilled >= enemiesToKillForDestruction)
 		{
 			DestroyNest();
 		}
@@ -181,16 +189,80 @@ public class EnemySpawner : MonoBehaviour
 		}
 	}
 
-	// ---------------- CLEARED ----------------
+	// ---------------- CLEARED (Start Respawn Timer) ----------------
 
 	private void OnAreaCleared()
 	{
-		Debug.Log(name + " area cleared!");
+		Debug.Log(name + " area cleared! Respawning in " + string.Format("{0} seconds.", respawnTime));
 
 		if (destroyEffect != null)
 			destroyEffect.Play();
 
-		Destroy(gameObject, 1f);
+		// Disable glow visuals
+		SetGlowActive(false);
+
+		// Start respawn timer
+		if (respawnRoutine != null)
+			StopCoroutine(respawnRoutine);
+		respawnRoutine = StartCoroutine(RespawnTimer());
+	}
+
+	private IEnumerator RespawnTimer()
+	{
+		isRespawning = true;
+		float timer = respawnTime;
+
+		// Update UI to show respawn timer
+		while (timer > 0)
+		{
+			if (killCounterText != null)
+			{
+				int totalSeconds = Mathf.CeilToInt(timer);
+
+				int minutes = totalSeconds / 60;
+				int seconds = totalSeconds % 60;
+
+				killCounterText.text = $"Respawn: {minutes:00}:{seconds:00}";
+				killCounterText.gameObject.SetActive(true); // Show even if player out of range
+			}
+
+			yield return new WaitForSeconds(1f);
+			timer -= 1f;
+		}
+
+		RespawnNest();
+	}
+
+	private void RespawnNest()
+	{
+		Debug.Log(name + " respawned!");
+
+		// Reset state
+		destroyed = false;
+		isRespawning = false;
+		currentHP = maxHP;
+		enemiesKilled = 0;
+		aliveEnemies = 0;
+
+		// Re-enable glow visuals
+		SetGlowActive(true);
+
+		// Update UI
+		UpdateKillCounterText();
+
+		// Restart spawning
+		if (spawnRoutine != null)
+			StopCoroutine(spawnRoutine);
+		spawnRoutine = StartCoroutine(SpawnLoop());
+	}
+
+	private void SetGlowActive(bool active)
+	{
+		foreach (GameObject obj in glowObjects)
+		{
+			if (obj != null)
+				obj.SetActive(active);
+		}
 	}
 
 	// ---------------- DEBUG ----------------
@@ -211,6 +283,5 @@ public class EnemySpawner : MonoBehaviour
 			Gizmos.color = new Color(0, 1, 0, 0.3f);
 			Gizmos.DrawWireSphere(transform.position, activationRange);
 		}
-
 	}
 }

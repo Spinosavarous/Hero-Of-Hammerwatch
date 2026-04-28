@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 6218817678198856398}
   m_Layer: 0
   m_Name: Coin
-  m_TagString: Untagged
+  m_TagString: Gold
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -108,6 +108,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapZSort
   offset: 0
+  basePriority: 0
 --- !u!58 &5581967940637077729
 CircleCollider2D:
   m_ObjectHideFlags: 0

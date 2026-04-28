@@ -12,8 +12,8 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private float runSpeed = 6.5f;
 
 	[Header("Stats")]
-	[SerializeField] private PlayerStats playerStats;
-	[SerializeField] private float currentHp;
+	[SerializeField] public PlayerStats playerStats;
+	[SerializeField] public float currentHp;
 	[SerializeField] private float attackDamage;
 
 	[Header("Movement UI")]
@@ -45,9 +45,9 @@ public class PlayerMovement : MonoBehaviour
 
 	[Header("XP")]
 	[SerializeField] private Slider xpSlider;
-	[SerializeField] private int playerLevel = 1;
+	[SerializeField] public int playerLevel = 1;
 	[SerializeField] private TextMeshProUGUI levelText;
-	[SerializeField] private float currentXP = 0f;
+	[SerializeField] public float currentXP = 0f;
 	[SerializeField] private TextMeshProUGUI xpText;
 
 	[Header("Gold")]
@@ -82,20 +82,23 @@ public class PlayerMovement : MonoBehaviour
 		isMobile = Application.isMobilePlatform;
 		currentSpeed = moveSpeed;
 
-		if (playerStats == null)
+		map.SetActive(false);
+	}
+
+	public void LoadPlayerStats(int level)
+	{
+		if (playerStats != null)
 		{
-			playerStats = new PlayerStats(1);
+			playerStats.LoadPlayerStats(level);
 		}
 
-		currentHp = playerStats.maxHealth;
+		healthBar.maxValue = playerStats.maxHealth;
 		stamina.maxValue = playerStats.stamina;
 		stamina.value = playerStats.stamina;
 		attackDamage = playerStats.attack;
 
 		xpSlider.maxValue = GetXPRequired(playerLevel);
 		xpSlider.value = currentXP;
-
-		map.SetActive(false);
 	}
 
 	void Start()
@@ -181,6 +184,7 @@ public class PlayerMovement : MonoBehaviour
 		levelText.text = playerLevel.ToString();
 	}
 
+	#region XP & Leveling
 	public void AddGold(int amount)
 	{
 		gold += amount;
@@ -225,6 +229,8 @@ public class PlayerMovement : MonoBehaviour
 		xpSlider.value = currentXP;
 	}
 
+	#endregion
+
 	private void OnTriggerEnter2D(Collider2D other)
 	{
 		if (other.CompareTag("XP"))
@@ -239,6 +245,8 @@ public class PlayerMovement : MonoBehaviour
 			Destroy(other.gameObject);
 		}
 	}
+
+	#region Inputs
 	// ---------------- INPUT ----------------
 
 	void HandlePCInput()
@@ -266,6 +274,8 @@ public class PlayerMovement : MonoBehaviour
 			Attack();
 		}
 	}
+
+	#endregion
 
 	private void Attack()
 	{
@@ -311,26 +321,60 @@ public class PlayerMovement : MonoBehaviour
 
 				if (enemy != null)
 				{
-					enemy.TakeDamage(attackDamage);
+					bool is_critical = Random.value < playerStats.critChance;
 
-					ShowDamageText(
-						attackDamage,
-						enemy.transform.position + damageOffset
+					Vector3 randomTextOffset = damageOffset + new Vector3(
+						Random.Range(-0.35f, 0.35f),
+						Random.Range(-0.15f, 0.25f),
+						0f
 					);
+
+					if (is_critical)
+					{
+						float critDamage = attackDamage * 2f;
+
+						enemy.TakeDamage(critDamage);
+
+						ShowDamageText(
+							critDamage,
+							enemy.transform.position + randomTextOffset
+						);
+
+						ShowCriticalText(
+							enemy.transform.position + randomTextOffset + Vector3.up * 0.35f
+						);
+					}
+					else
+					{
+						enemy.TakeDamage(attackDamage);
+
+						ShowDamageText(
+							attackDamage,
+							enemy.transform.position + randomTextOffset
+						);
+					}
 				}
 
-				if (nest != null)
+				if (nest != null && !nest.destroyed)
 				{
+					Vector3 randomTextOffset = damageOffset + new Vector3(
+						Random.Range(-0.35f, 0.35f),
+						Random.Range(-0.15f, 0.25f),
+						0f
+					);
+
 					nest.TakeDamage(attackDamage);
+
 					ShowDamageText(
 						attackDamage,
-						nest.transform.position + damageOffset
+						nest.transform.position + randomTextOffset
 					);
 				}
 			}
 		}
 	}
 
+	#region DamageText
 	// ---------------- SHOW DAMAGE TEXT ----------------
 
 	private void ShowDamageText(float damage, Vector3 worldPos)
@@ -384,6 +428,76 @@ public class PlayerMovement : MonoBehaviour
 
 		Destroy(txt.gameObject);
 	}
+
+	#endregion
+
+	#region CriticalText
+	private void ShowCriticalText(Vector3 worldPos)
+	{
+		if (damageTextPrefab == null)
+			return;
+
+		TextMeshPro txt = Instantiate(
+			damageTextPrefab,
+			worldPos,
+			Quaternion.identity
+		);
+
+		txt.text = "CRITICAL!";
+
+		// Between yellow and orange
+		txt.color = new Color(1f, 0.65f, 0f, 1f);
+
+		Vector3 randomOffset = new Vector3(
+			Random.Range(-0.25f, 0.25f),
+			Random.Range(-0.1f, 0.1f),
+			0f
+		);
+
+		txt.transform.position += randomOffset;
+
+		StartCoroutine(FloatingCriticalText(txt));
+	}
+
+	private IEnumerator FloatingCriticalText(TextMeshPro txt)
+	{
+		float time = 0f;
+		float duration = 1f;
+
+		Color color = txt.color;
+
+		Vector3 start = txt.transform.position;
+		Vector3 end = start + Vector3.up * 1.5f;
+
+		Vector3 originalScale = txt.transform.localScale;
+		Vector3 bigScale = originalScale * 1.35f;
+
+		while (time < duration)
+		{
+			time += Time.deltaTime;
+
+			float t = time / duration;
+
+			txt.transform.position =
+				Vector3.Lerp(start, end, t);
+
+			if (t < 0.3f)
+				txt.transform.localScale =
+					Vector3.Lerp(originalScale, bigScale, t / 0.3f);
+			else
+				txt.transform.localScale =
+					Vector3.Lerp(bigScale, originalScale, (t - 0.3f) / 0.7f);
+
+			color.a = Mathf.Lerp(1f, 0f, t);
+			txt.color = color;
+
+			yield return null;
+		}
+
+		Destroy(txt.gameObject);
+	}
+
+	#endregion
 
 	private IEnumerator AttackEnd()
 	{

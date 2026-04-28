@@ -19,6 +19,6 @@ MonoBehaviour:
   attackRange: 1.5
   attackCooldown: 1
   mass: 1
-  knockbackResistance: 0
+  knockbackResistance: 0.2
   xpReward: 15
   goldReward: 2

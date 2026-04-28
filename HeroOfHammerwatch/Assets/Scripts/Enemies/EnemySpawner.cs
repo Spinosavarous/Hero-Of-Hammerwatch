@@ -2,11 +2,25 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
+[System.Serializable]
+public class SpawnerSaveData
+{
+	public string id;
+	public int spawnCounter;
+	public bool destroyed;
+	public int aliveEnemies;
+	public int enemiesKilled;
+	public float currentHP;
+}
+
 public class EnemySpawner : MonoBehaviour
 {
+	[Header("Save")]
+	[SerializeField] public string spawnerId;
+
 	[Header("Nest Stats")]
 	[SerializeField] private float maxHP = 150f;
-	[SerializeField] private float currentHP;
+	[SerializeField] public float currentHP;
 
 	[Header("Spawning")]
 	[SerializeField] private GameObject[] enemyPrefabs;
@@ -20,40 +34,47 @@ public class EnemySpawner : MonoBehaviour
 
 	[Header("Respawn Settings")]
 	[SerializeField] private float respawnTime = 10f;
-	[SerializeField] private GameObject[] glowObjects; // Assign the two children here
+	[SerializeField] private GameObject[] glowObjects;
 
 	[Header("Effects")]
 	[SerializeField] private ParticleSystem destroyEffect;
 
 	[Header("UI")]
-	[SerializeField] private TextMeshPro killCounterText;
+	[SerializeField] public TextMeshPro killCounterText;
 
 	[Header("Activation")]
 	[SerializeField] private float activationRange = 15f;
 	[SerializeField] private bool showActivationRange = true;
 
-	private bool playerInRange = false;
-
 	private GameObject Player;
-	private int aliveEnemies = 0;
+
+	public int aliveEnemies = 0;
 	private int enemiesKilled = 0;
-	private bool destroyed = false;
+	private int spawnCounter = 0;
+
+	public bool destroyed = false;
 	private bool isRespawning = false;
+	private bool playerInRange = false;
 
 	private Coroutine spawnRoutine;
 	private Coroutine respawnRoutine;
 
-	// ---------------- START ----------------
+	// ---------------- AWAKEN ----------------
 
 	void Awake()
 	{
+		if (string.IsNullOrEmpty(spawnerId))
+			spawnerId = gameObject.scene.name + "_" + gameObject.name;
+
 		currentHP = maxHP;
 	}
 
 	void Start()
 	{
 		Player = GameObject.FindGameObjectWithTag("Player");
-		spawnRoutine = StartCoroutine(SpawnLoop());
+
+		if (!destroyed)
+			spawnRoutine = StartCoroutine(SpawnLoop());
 
 		UpdateKillCounterText();
 	}
@@ -61,16 +82,13 @@ public class EnemySpawner : MonoBehaviour
 	void Update()
 	{
 		if (Player == null) return;
-		if (destroyed || isRespawning) return;
+		if (isRespawning) return;
 
 		float distance = Vector2.Distance(transform.position, Player.transform.position);
 		playerInRange = distance <= activationRange;
 
-		if (killCounterText != null)
-		{
-			// Only show counter when player is in range and nest is active
-			killCounterText.gameObject.SetActive(playerInRange);
-		}
+		/*if (killCounterText != null)
+			killCounterText.gameObject.SetActive(playerInRange && !destroyed);*/
 	}
 
 	// ---------------- SPAWN LOOP ----------------
@@ -102,9 +120,7 @@ public class EnemySpawner : MonoBehaviour
 			enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
 
 		Vector3 pos =
-			spawnPoint != null
-			? spawnPoint.position
-			: transform.position;
+			spawnPoint != null ? spawnPoint.position : transform.position;
 
 		GameObject enemy =
 			Instantiate(prefab, pos, Quaternion.identity);
@@ -112,12 +128,18 @@ public class EnemySpawner : MonoBehaviour
 		enemy.tag = "Enemy";
 
 		aliveEnemies++;
+		spawnCounter++;
 
-		EnemyMovement em =
-			enemy.GetComponent<EnemyMovement>();
+		string id = spawnerId + "_enemy_" + spawnCounter;
 
+		EnemyMovement em = enemy.GetComponent<EnemyMovement>();
 		if (em != null)
+		{
 			em.SetSpawner(this);
+			em.SetEnemyId(id);
+		}
+
+		SaveSpawner();
 	}
 
 	// ---------------- DAMAGE ----------------
@@ -134,11 +156,13 @@ public class EnemySpawner : MonoBehaviour
 			currentHP = 0;
 			DestroyNest();
 		}
+
+		SaveSpawner();
 	}
 
-	// ---------------- DESTROY (Start Respawn) ----------------
+	// ---------------- DESTROY ----------------
 
-	private void DestroyNest()
+	public void DestroyNest()
 	{
 		if (destroyed || isRespawning)
 			return;
@@ -149,9 +173,11 @@ public class EnemySpawner : MonoBehaviour
 			StopCoroutine(spawnRoutine);
 
 		CheckAreaClear();
+
+		SaveSpawner();
 	}
 
-	// ---------------- CALLED BY ENEMY ----------------
+	// ---------------- ENEMY DEATH ----------------
 
 	public void EnemyDied()
 	{
@@ -162,8 +188,11 @@ public class EnemySpawner : MonoBehaviour
 			aliveEnemies = 0;
 
 		UpdateKillCounterText();
+		SaveSpawner();
 
-		if (destroyWhenEnemiesKilled && !destroyed && !isRespawning && enemiesKilled >= enemiesToKillForDestruction)
+		if (destroyWhenEnemiesKilled &&
+			!destroyed &&
+			enemiesKilled >= enemiesToKillForDestruction)
 		{
 			DestroyNest();
 		}
@@ -171,63 +200,63 @@ public class EnemySpawner : MonoBehaviour
 		CheckAreaClear();
 	}
 
+	// ---------------- UI ----------------
+
 	private void UpdateKillCounterText()
 	{
 		if (killCounterText != null)
-		{
 			killCounterText.text = $"{enemiesKilled} / {enemiesToKillForDestruction}";
-		}
 	}
 
-	// ---------------- CLEAR CHECK ----------------
+	// ---------------- AREA CHECK ----------------
 
 	private void CheckAreaClear()
 	{
 		if (destroyed && aliveEnemies <= 0)
-		{
 			OnAreaCleared();
-		}
 	}
-
-	// ---------------- CLEARED (Start Respawn Timer) ----------------
 
 	private void OnAreaCleared()
 	{
-		Debug.Log(name + " area cleared! Respawning in " + string.Format("{0} seconds.", respawnTime));
-
 		if (destroyEffect != null)
 			destroyEffect.Play();
 
-		// Disable glow visuals
 		SetGlowActive(false);
 
-		// Start respawn timer
 		if (respawnRoutine != null)
 			StopCoroutine(respawnRoutine);
-		respawnRoutine = StartCoroutine(RespawnTimer());
+
+		respawnRoutine = StartCoroutine(RespawnTimer(respawnTime));
 	}
 
-	private IEnumerator RespawnTimer()
+	public void SpawnerTimeLoad(float time)
+	{
+		SetGlowActive(false);
+
+		if (respawnRoutine != null)
+			StopCoroutine(respawnRoutine);
+
+		respawnRoutine = StartCoroutine(RespawnTimer(time));
+	}
+
+	// ---------------- RESPAWN ----------------
+
+	private IEnumerator RespawnTimer(float time)
 	{
 		isRespawning = true;
-		float timer = respawnTime;
 
-		// Update UI to show respawn timer
+		float timer = time;
 		while (timer > 0)
 		{
 			if (killCounterText != null)
 			{
-				int totalSeconds = Mathf.CeilToInt(timer);
-
-				int minutes = totalSeconds / 60;
-				int seconds = totalSeconds % 60;
-
-				killCounterText.text = $"Respawn: {minutes:00}:{seconds:00}";
-				killCounterText.gameObject.SetActive(true); // Show even if player out of range
+				int t = Mathf.CeilToInt(timer);
+				killCounterText.text = $"Respawn: {t / 60:00}:{t % 60:00}";
+				killCounterText.gameObject.SetActive(true);
 			}
 
 			yield return new WaitForSeconds(1f);
-			timer -= 1f;
+			timer--;
 		}
 
 		RespawnNest();
@@ -235,37 +264,30 @@ public class EnemySpawner : MonoBehaviour
 
 	private void RespawnNest()
 	{
-		Debug.Log(name + " respawned!");
-
-		// Reset state
 		destroyed = false;
 		isRespawning = false;
+
 		currentHP = maxHP;
 		enemiesKilled = 0;
 		aliveEnemies = 0;
 
-		// Re-enable glow visuals
 		SetGlowActive(true);
-
-		// Update UI
 		UpdateKillCounterText();
 
-		// Restart spawning
 		if (spawnRoutine != null)
 			StopCoroutine(spawnRoutine);
+
 		spawnRoutine = StartCoroutine(SpawnLoop());
+
+		SaveSpawner();
 	}
 
 	private void SetGlowActive(bool active)
 	{
 		foreach (GameObject obj in glowObjects)
-		{
 			if (obj != null)
 				obj.SetActive(active);
-		}
 	}
-
-	// ---------------- DEBUG ----------------
 
 	private void OnDrawGizmosSelected()
 	{
@@ -283,5 +305,25 @@ public class EnemySpawner : MonoBehaviour
 			Gizmos.color = new Color(0, 1, 0, 0.3f);
 			Gizmos.DrawWireSphere(transform.position, activationRange);
 		}
+	}
+
+	// ---------------- SAVE / LOAD ----------------
+
+	public void SaveSpawner()
+	{
+		SpawnerSaveData data = new SpawnerSaveData
+		{
+			id = spawnerId,
+			spawnCounter = spawnCounter,
+			destroyed = destroyed,
+			aliveEnemies = aliveEnemies,
+			enemiesKilled = enemiesKilled,
+			currentHP = currentHP
+		};
+
+		PlayerPrefs.SetString(
+			"spawner_" + spawnerId,
+			JsonUtility.ToJson(data)
+		);
 	}
 }

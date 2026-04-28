@@ -24,6 +24,9 @@ public class MapSaving : MonoBehaviour
 	[Header("Enemy Prefabs")]
 	[SerializeField] private GameObject[] enemyPrefabs;
 
+	[Header("Regions")]
+	[SerializeField] private List<GameObject> regions;
+
 	private float timer;
 	private PlayerMovement player;
 
@@ -100,7 +103,7 @@ public class MapSaving : MonoBehaviour
 				posY = player.transform.position.y,
 				currentRegion = "",
 				openedChests = openedChests,
-				clearedRegions = new List<string>(),
+				clearedRegions = regions.Where(r => !r.activeSelf).Select(r => r.name).ToList(),
 				destroyedSpawners = spawners.All(s => s.spawnerId == null || s.destroyed) ? spawners.Select(s => s.spawnerId).ToList() : new List<string>(),
 				enemies = enemies.Select(e => new EnemySave {
 					id = e.enemyId,
@@ -151,6 +154,13 @@ public class MapSaving : MonoBehaviour
 		player.currentXP = data.currentXP;
 		player.currentHp = data.hp;
 		player.gold = data.gold;
+
+		if (player.currentHp <= 0)
+		{
+			player.currentHp = player.playerStats.maxHealth;
+			player.transform.position =
+				new Vector2(112, -60);
+		}
 
 		//----------------------------------
 		// FIND MAP SPAWNERS (fixed objects)
@@ -253,6 +263,18 @@ public class MapSaving : MonoBehaviour
 			obj.GetComponent<Collider2D>().enabled = true;
 			obj.GetComponent<Rigidbody2D>().simulated = true;
 			obj.GetComponent<Animator>().enabled = true;
+
+			for (int i = 0; i < data.clearedRegions.Count; i ++)
+			{
+				for (int j = 0; j < regions.Count; j ++)
+				{
+					if (regions[j].name.Trim().Equals(data.clearedRegions[i].Trim()))
+					{
+						regions[j].SetActive(false);
+						break;
+					}
+				}
+			}
 		}
 
 		Debug.Log("Map Loaded");

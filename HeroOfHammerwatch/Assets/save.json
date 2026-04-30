@@ -1,11 +1,11 @@
 {
     "level": 8,
-    "currentXP": 405,
-    "gold": 784,
-    "hp": 110.0,
+    "currentXP": 425,
+    "gold": 786,
+    "hp": 90.0,
     "maxHp": 180.0,
-    "posX": 112.0,
-    "posY": -60.0,
+    "posX": 109.0047836303711,
+    "posY": -72.23224639892578,
     "currentRegion": "",
     "openedChests": [],
     "clearedRegions": [
@@ -15,227 +15,267 @@
     "destroyedSpawners": [],
     "enemies": [
         {
-            "id": "Spawner8_enemy_1",
-            "type": "Enemy6",
-            "hp": 160.0,
-            "posX": -33.206809997558597,
-            "posY": -132.63778686523438,
-            "dead": false
-        },
-        {
-            "id": "Spawner8_enemy_1",
-            "type": "Enemy6",
-            "hp": 160.0,
-            "posX": -24.529338836669923,
-            "posY": -202.4062042236328,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_2",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -48.48260498046875,
-            "posY": -154.92544555664063,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_1",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -44.24492263793945,
-            "posY": -150.6038360595703,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_8",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": 2.6278023719787599,
-            "posY": -161.31472778320313,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_7",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": 58.625091552734378,
-            "posY": -217.77761840820313,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_6",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": 97.31454467773438,
-            "posY": -236.67347717285157,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_1",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": -14.539161682128907,
-            "posY": -202.8351287841797,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_2",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": 99.27236938476563,
-            "posY": -235.18637084960938,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_3",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": -3.5421528816223146,
-            "posY": -193.240234375,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_5",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": 101.230224609375,
-            "posY": -233.79196166992188,
-            "dead": false
-        },
-        {
-            "id": "Spawner4_enemy_6",
-            "type": "Enemy4",
-            "hp": 225.0,
-            "posX": 103.18824768066406,
-            "posY": -233.50460815429688,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_1",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -45.881771087646487,
-            "posY": -156.76626586914063,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_2",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -44.53101348876953,
-            "posY": -154.2113800048828,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_3",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -48.7420768737793,
-            "posY": -158.5835723876953,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_4",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -40.410030364990237,
-            "posY": -156.32553100585938,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_5",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -44.47502136230469,
-            "posY": -156.19033813476563,
-            "dead": false
-        },
-        {
-            "id": "Spawner5_enemy_5",
+            "id": "Spawner1_enemy_7",
             "type": "Enemy1",
             "hp": 50.0,
-            "posX": 101.26712799072266,
-            "posY": -248.0662078857422,
+            "posX": 118.94190979003906,
+            "posY": -78.45059204101563,
             "dead": false
         },
         {
-            "id": "Spawner6_enemy_6",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -50.2481575012207,
-            "posY": -158.5778350830078,
-            "dead": false
-        },
-        {
-            "id": "Spawner6_enemy_7",
-            "type": "Enemy5",
-            "hp": 300.0,
-            "posX": -42.62294387817383,
-            "posY": -151.54258728027345,
-            "dead": false
-        },
-        {
-            "id": "Spawner5_enemy_7",
+            "id": "Spawner1_enemy_6",
             "type": "Enemy1",
             "hp": 50.0,
-            "posX": 103.47206115722656,
-            "posY": -248.58676147460938,
+            "posX": 113.9505844116211,
+            "posY": -75.28804016113281,
             "dead": false
         },
         {
-            "id": "Spawner5_enemy_8",
+            "id": "Spawner1_enemy_5",
             "type": "Enemy1",
             "hp": 50.0,
-            "posX": 104.20108032226563,
-            "posY": -248.21688842773438,
+            "posX": 110.05894470214844,
+            "posY": -72.93167877197266,
             "dead": false
         },
         {
-            "id": "Spawner7_enemy_2",
-            "type": "Enemy7",
-            "hp": 100.0,
-            "posX": -51.912071228027347,
-            "posY": -158.75274658203126,
+            "id": "Spawner1_enemy_4",
+            "type": "Enemy1",
+            "hp": 9.0,
+            "posX": 109.95884704589844,
+            "posY": -72.41670227050781,
             "dead": false
         },
         {
-            "id": "Spawner7_enemy_3",
-            "type": "Enemy7",
-            "hp": 59.0,
-            "posX": -43.699981689453128,
-            "posY": -148.68536376953126,
-            "dead": false
-        },
-        {
-            "id": "Spawner8_enemy_3",
-            "type": "Enemy6",
-            "hp": 160.0,
-            "posX": -49.64080047607422,
-            "posY": -156.73936462402345,
-            "dead": false
-        },
-        {
-            "id": "Spawner7_enemy_4",
-            "type": "Enemy7",
-            "hp": 100.0,
-            "posX": -9.157626152038575,
-            "posY": -202.8477783203125,
-            "dead": false
-        },
-        {
-            "id": "Spawner8_enemy_4",
-            "type": "Enemy6",
-            "hp": 160.0,
-            "posX": -44.26816177368164,
-            "posY": -152.3756561279297,
+            "id": "Spawner1_enemy_3",
+            "type": "Enemy1",
+            "hp": 9.0,
+            "posX": 134.63856506347657,
+            "posY": -66.79737854003906,
             "dead": false
         },
         {
             "id": "Spawner8_enemy_5",
             "type": "Enemy6",
             "hp": 160.0,
-            "posX": -43.0552978515625,
-            "posY": -158.57127380371095,
+            "posX": 5.206807613372803,
+            "posY": -127.5133056640625,
+            "dead": false
+        },
+        {
+            "id": "Spawner8_enemy_4",
+            "type": "Enemy6",
+            "hp": 160.0,
+            "posX": 2.193359851837158,
+            "posY": -122.88777160644531,
+            "dead": false
+        },
+        {
+            "id": "Spawner7_enemy_4",
+            "type": "Enemy7",
+            "hp": 100.0,
+            "posX": 36.128273010253909,
+            "posY": -155.8477783203125,
+            "dead": false
+        },
+        {
+            "id": "Spawner8_enemy_3",
+            "type": "Enemy6",
+            "hp": 160.0,
+            "posX": 1.7238410711288453,
+            "posY": -123.90562438964844,
+            "dead": false
+        },
+        {
+            "id": "Spawner7_enemy_3",
+            "type": "Enemy7",
+            "hp": 100.0,
+            "posX": 5.132784366607666,
+            "posY": -117.83939361572266,
+            "dead": false
+        },
+        {
+            "id": "Spawner7_enemy_2",
+            "type": "Enemy7",
+            "hp": 100.0,
+            "posX": 3.6254818439483644,
+            "posY": -126.14531707763672,
+            "dead": false
+        },
+        {
+            "id": "Spawner5_enemy_8",
+            "type": "Enemy1",
+            "hp": 50.0,
+            "posX": 105.3875732421875,
+            "posY": -247.62088012695313,
+            "dead": false
+        },
+        {
+            "id": "Spawner5_enemy_7",
+            "type": "Enemy1",
+            "hp": 50.0,
+            "posX": 104.86779022216797,
+            "posY": -247.87841796875,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_7",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 5.2905964851379398,
+            "posY": -121.40650177001953,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_6",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 2.2735631465911867,
+            "posY": -119.71581268310547,
+            "dead": false
+        },
+        {
+            "id": "Spawner5_enemy_5",
+            "type": "Enemy1",
+            "hp": 50.0,
+            "posX": 101.60130310058594,
+            "posY": -242.22621154785157,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_5",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 3.78330659866333,
+            "posY": -123.75225067138672,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_4",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 5.289486885070801,
+            "posY": -126.35047149658203,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_3",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 3.7824525833129885,
+            "posY": -119.75289154052735,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_2",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 5.2905964851379398,
+            "posY": -123.43392944335938,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_1",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 3.779491424560547,
+            "posY": -121.7295913696289,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_6",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 106.81716918945313,
+            "posY": -163.83937072753907,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_5",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 103.10552978515625,
+            "posY": -208.68101501464845,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_3",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 30.540996551513673,
+            "posY": -155.8351287841797,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_2",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 104.31654357910156,
+            "posY": -165.66030883789063,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_1",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": -13.420103073120118,
+            "posY": -202.8351287841797,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_6",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 102.35871887207031,
+            "posY": -167.14727783203126,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_7",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 74.53941345214844,
+            "posY": -166.83790588378907,
+            "dead": false
+        },
+        {
+            "id": "Spawner4_enemy_8",
+            "type": "Enemy4",
+            "hp": 225.0,
+            "posX": 15.542156219482422,
+            "posY": -149.8377685546875,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_1",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 4.284987449645996,
+            "posY": -114.43350219726563,
+            "dead": false
+        },
+        {
+            "id": "Spawner6_enemy_2",
+            "type": "Enemy5",
+            "hp": 300.0,
+            "posX": 3.3131654262542726,
+            "posY": -116.41020965576172,
+            "dead": false
+        },
+        {
+            "id": "Spawner8_enemy_1",
+            "type": "Enemy6",
+            "hp": 160.0,
+            "posX": -18.793193817138673,
+            "posY": -197.6172332763672,
+            "dead": false
+        },
+        {
+            "id": "Spawner8_enemy_1",
+            "type": "Enemy6",
+            "hp": 160.0,
+            "posX": 5.206808567047119,
+            "posY": -115.5916748046875,
             "dead": false
         },
         {
@@ -314,14 +354,14 @@
             "id": "Spawner8",
             "destroyed": false,
             "respawnTimer": 0.0,
-            "aliveCount": 1,
+            "aliveCount": 0,
             "currentHP": 360
         },
         {
             "id": "Spawner8",
             "destroyed": false,
             "respawnTimer": 0.0,
-            "aliveCount": 1,
+            "aliveCount": 0,
             "currentHP": 360
         },
         {
@@ -330,6 +370,13 @@
             "respawnTimer": 0.0,
             "aliveCount": 0,
             "currentHP": 200
+        },
+        {
+            "id": "Spawner4",
+            "destroyed": false,
+            "respawnTimer": 0.0,
+            "aliveCount": 0,
+            "currentHP": 197
         },
         {
             "id": "Spawner7",
@@ -346,11 +393,25 @@
             "currentHP": 220
         },
         {
-            "id": "Spawner1",
+            "id": "Spawner6",
             "destroyed": false,
             "respawnTimer": 0.0,
             "aliveCount": 0,
+            "currentHP": 360
+        },
+        {
+            "id": "Spawner1",
+            "destroyed": false,
+            "respawnTimer": 0.0,
+            "aliveCount": 5,
             "currentHP": 150
+        },
+        {
+            "id": "Spawner5",
+            "destroyed": false,
+            "respawnTimer": 0.0,
+            "aliveCount": 0,
+            "currentHP": 68
         },
         {
             "id": "Spawner4",

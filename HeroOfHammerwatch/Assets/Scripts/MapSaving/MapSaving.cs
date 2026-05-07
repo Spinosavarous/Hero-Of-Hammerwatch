@@ -1,13 +1,7 @@
-// =====================================
-// MapSaving.cs
-// Put on empty GameObject in scene
-// =====================================
-
-using NUnit.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -30,9 +24,12 @@ public class MapSaving : MonoBehaviour
 	private float timer;
 	private PlayerMovement player;
 
+	// =====================================
+	// INIT
+	// =====================================
+
 	void Awake()
 	{
-		player = FindAnyObjectByType<PlayerMovement>();
 		if (Instance == null)
 		{
 			Instance = this;
@@ -63,7 +60,16 @@ public class MapSaving : MonoBehaviour
 
 	void OnApplicationQuit()
 	{
-		SaveMap();
+		StartCoroutine(SaveBeforeQuit());
+	}
+
+	// =====================================
+	// SAFE SAVE BEFORE QUIT
+	// =====================================
+
+	private IEnumerator SaveBeforeQuit()
+	{
+		yield return SaveMapCoroutine();
 	}
 
 	// =====================================
@@ -72,216 +78,214 @@ public class MapSaving : MonoBehaviour
 
 	public void SaveMap()
 	{
-		EnemySpawner[] spawners =
-			FindObjectsOfType<EnemySpawner>(true);
+		StartCoroutine(SaveMapCoroutine());
+	}
 
-		foreach (EnemySpawner spawner in spawners)
+	private IEnumerator SaveMapCoroutine()
+	{
+		player = FindAnyObjectByType<PlayerMovement>();
+
+		if (player == null)
 		{
-			if (spawner != null)
-				spawner.SaveSpawner();
+			Debug.LogWarning("No player found - cannot save");
+			yield break;
 		}
 
-		EnemyMovement[] enemies =
-			FindObjectsOfType<EnemyMovement>(true);
+		Debug.Log("Saving map...");
 
-		foreach (EnemyMovement enemy in enemies)
+		EnemySpawner[] spawners = FindObjectsOfType<EnemySpawner>(true);
+		EnemyMovement[] enemies = FindObjectsOfType<EnemyMovement>(true);
+
+		foreach (var spawner in spawners)
+			spawner?.SaveSpawner();
+
+		foreach (var enemy in enemies)
+			enemy?.SaveEnemy();
+
+		var worldData = new WorldSaveData
 		{
-			if (enemy != null)
-				enemy.SaveEnemy();
-		}
+			level = player.playerLevel,
+			currentXP = Convert.ToInt32(player.currentXP),
+			gold = Convert.ToInt32(player.gold),
 
-		PlayerPrefs.Save();
+			hp = player.currentHp,
+			maxHp = player.playerStats.maxHealth,
 
-		SaveManager.Instance.SaveLocal(
-			new SaveData {
-				level = player.playerLevel,
-				currentXP = Convert.ToInt32(player.currentXP),
-				gold = Convert.ToInt32(player.gold),
-				hp = Convert.ToInt32(player.currentHp),
-				maxHp = Convert.ToInt32(player.playerStats.maxHealth),
-				posX = player.transform.position.x,
-				posY = player.transform.position.y,
-				currentRegion = "",
-				openedChests = openedChests,
-				clearedRegions = regions.Where(r => !r.activeSelf).Select(r => r.name).ToList(),
-				destroyedSpawners = spawners.All(s => s.spawnerId == null || s.destroyed) ? spawners.Select(s => s.spawnerId).ToList() : new List<string>(),
-				enemies = enemies.Select(e => new EnemySave {
-					id = e.enemyId,
-					type = e.transform.name.Replace("(Clone)", "").Trim(),
-					hp = Convert.ToInt32(e.IsDead() ? 0 : e.currentHp),
-					posX = e.transform.position.x,
-					posY = e.transform.position.y
-				}).ToList(),
-				spawners = spawners.Select(s => new SpawnerSave {
-					id = s.spawnerId,
-					respawnTimer = s.destroyed ? GetSecondsFromText(s.killCounterText.text) : 0f,
-					aliveCount = s.destroyed ? 0 : s.aliveEnemies,
-					destroyed = s.destroyed,
-					currentHP = Convert.ToInt32(s.currentHP)
-				}).ToList()
-			}
-		);
+			posX = player.transform.position.x,
+			posY = player.transform.position.y,
 
-		Debug.Log("Map Saved");
+			currentRegion = "",
+
+			openedChests = openedChests,
+
+			clearedRegions = regions
+				.Where(r => !r.activeSelf)
+				.Select(r => r.name)
+				.ToList(),
+
+			destroyedSpawners = spawners
+				.Where(s => s.destroyed)
+				.Select(s => s.spawnerId)
+				.ToList(),
+
+			enemies = enemies.Select(e => new EnemyData
+			{
+				id = e.enemyId,
+				type = e.transform.name.Replace("(Clone)", "").Trim(),
+				hp = e.IsDead() ? 0 : e.currentHp,
+				posX = e.transform.position.x,
+				posY = e.transform.position.y,
+				dead = e.IsDead()
+			}).ToList(),
+
+			spawners = spawners.Select(s => new SpawnerData
+			{
+				id = s.spawnerId,
+				destroyed = s.destroyed,
+				respawnTimer = s.destroyed ? GetSecondsFromText(s.killCounterText.text) : 0f,
+				aliveCount = s.destroyed ? 0 : s.aliveEnemies,
+				currentHP = Convert.ToInt32(s.currentHP)
+			}).ToList()
+		};
+
+		// 🔥 CRITICAL FIX → sync global memory
+		PlayerDataManager.Instance.worldData = worldData;
+
+		// 🔥 SAVE TO SERVER (wait for it)
+		yield return APIManager.Instance.SaveWorldCoroutine(worldData);
+
+		Debug.Log("Map Saved to SERVER");
 	}
 
 	// =====================================
-	// LOAD WHOLE MAP
+	// LOAD MAP
 	// =====================================
 
 	public void LoadMap()
 	{
-		var data = SaveManager.Instance.LoadLocal();
+		StartCoroutine(WaitForDataThenLoad());
+	}
+
+	private IEnumerator WaitForDataThenLoad()
+	{
+		yield return new WaitUntil(() =>
+			PlayerDataManager.Instance != null &&
+			PlayerDataManager.Instance.isLoaded
+		);
+
+		player = FindAnyObjectByType<PlayerMovement>();
+
+		if (player == null)
+		{
+			Debug.LogWarning("Player not found during load");
+			yield break;
+		}
+
+		var data = PlayerDataManager.Instance.worldData;
 
 		if (data == null)
 		{
-			Debug.LogWarning("No save data found.");
-			return;
+			Debug.LogWarning("No world data found.");
+			yield break;
 		}
 
+		ApplyWorld(data);
+	}
+
+	// =====================================
+	// APPLY WORLD
+	// =====================================
+
+	private void ApplyWorld(WorldSaveData data)
+	{
 		//----------------------------------
-		// PLAYER LOAD
+		// SPAWNERS
 		//----------------------------------
-		player.playerLevel = data.level;
+		var spawners = FindObjectsOfType<EnemySpawner>(true);
 
-		player.transform.position =
-			new Vector2(data.posX, data.posY);
-
-		openedChests = data.openedChests;
-
-		player.LoadPlayerStats(player.playerLevel);
-
-		player.currentXP = data.currentXP;
-		player.currentHp = data.hp;
-		player.gold = data.gold;
-
-		if (player.currentHp <= 0)
+		foreach (var spawner in spawners)
 		{
-			player.currentHp = player.playerStats.maxHealth;
-			player.transform.position =
-				new Vector2(112, -60);
-		}
+			var saveData = data.spawners
+				.FirstOrDefault(s => s.id == spawner.spawnerId);
 
-		//----------------------------------
-		// FIND MAP SPAWNERS (fixed objects)
-		//----------------------------------
-		EnemySpawner[] spawners =
-			FindObjectsOfType<EnemySpawner>(true);
-
-		//----------------------------------
-		// LOAD SPAWNER STATS ONLY
-		//----------------------------------
-		foreach (EnemySpawner spawner in spawners)
-		{
-			if (spawner == null)
-				continue;
-
-			var saveData =
-				data.spawners.FirstOrDefault(s =>
-					s.id == spawner.spawnerId);
-
-			if (saveData == null)
-				continue;
+			if (saveData == null) continue;
 
 			spawner.currentHP = saveData.currentHP;
 			spawner.destroyed = saveData.destroyed;
 
 			if (saveData.destroyed)
-			{
 				spawner.SpawnerTimeLoad(saveData.respawnTimer);
-			}
 		}
 
 		//----------------------------------
-		// REMOVE EXISTING ENEMIES
+		// REMOVE OLD ENEMIES
 		//----------------------------------
-		EnemyMovement[] oldEnemies =
-			FindObjectsOfType<EnemyMovement>(true);
-
-		foreach (EnemyMovement enemy in oldEnemies)
+		foreach (var enemy in FindObjectsOfType<EnemyMovement>(true))
 		{
-			if (enemy != null && enemy.tag == "Enemy")
+			if (enemy.CompareTag("Enemy"))
 				Destroy(enemy.gameObject);
 		}
 
 		//----------------------------------
-		// SPAWN SAVED ENEMIES
+		// SPAWN ENEMIES
 		//----------------------------------
 		foreach (var enemyData in data.enemies)
 		{
-			if (!enemyData.id.ToLower().Contains("spawner"))
-			{
-				Debug.LogWarning(
-					"Enemy ID does not contain 'spawner': " +
-					enemyData.id);
-
-				return;
-			}
-
-			GameObject prefab =
-				enemyPrefabs.FirstOrDefault(p =>
-					p.name == enemyData.type);
+			GameObject prefab = enemyPrefabs
+				.FirstOrDefault(p => p.name == enemyData.type);
 
 			if (prefab == null)
 			{
-				Debug.LogWarning(
-					"Enemy prefab not found: " +
-					enemyData.type);
+				Debug.LogWarning("Missing prefab: " + enemyData.type);
 				continue;
 			}
 
-			GameObject obj =
-				Instantiate(
-					prefab,
-					new Vector2(
-						enemyData.posX,
-						enemyData.posY),
-					Quaternion.identity
-				);
+			var obj = Instantiate(prefab,
+				new Vector2(enemyData.posX, enemyData.posY),
+				Quaternion.identity);
 
-			EnemyMovement enemy =
-				obj.GetComponent<EnemyMovement>();
-
-			if (enemy == null)
-			{
-				Debug.LogWarning(
-					"Prefab missing EnemyMovement: " +
-					prefab.name);
-				Destroy(obj);
-				continue;
-			}
+			var enemy = obj.GetComponent<EnemyMovement>();
 
 			enemy.enemyId = enemyData.id;
 			enemy.currentHp = enemyData.hp;
 
-			obj.tag = "Enemy";
-
-			if (enemyData.dead || enemyData.hp <= 0)
-				obj.SetActive(false);
-
-			obj.GetComponent<EnemyMovement>().enabled = true;
-			obj.GetComponent<Collider2D>().enabled = true;
-			obj.GetComponent<Rigidbody2D>().simulated = true;
-			obj.GetComponent<Animator>().enabled = true;
-
-			for (int i = 0; i < data.clearedRegions.Count; i ++)
+			if (obj.name.Contains("Clone") || obj.name.ToLower().Contains("spawner"))
 			{
-				for (int j = 0; j < regions.Count; j ++)
-				{
-					if (regions[j].name.Trim().Equals(data.clearedRegions[i].Trim()))
-					{
-						regions[j].SetActive(false);
-						break;
-					}
-				}
+				obj.tag = "Enemy";
 			}
+			
+			obj.SetActive(!(enemyData.dead || enemyData.hp <= 0));
 		}
 
-		Debug.Log("Map Loaded");
+		//----------------------------------
+		// REGIONS
+		//----------------------------------
+		foreach (var region in regions)
+		{
+			if (data.clearedRegions.Contains(region.name))
+				region.SetActive(false);
+		}
+
+		Debug.Log("Map Loaded from GLOBAL DATA");
 	}
 
 	// =====================================
-	// FORCE SAVE BUTTON
+	// HELPERS
+	// =====================================
+
+	private float GetSecondsFromText(string text)
+	{
+		string time = text.Replace("Respawn: ", "");
+		string[] parts = time.Split(':');
+
+		int minutes = int.Parse(parts[0]);
+		int seconds = int.Parse(parts[1]);
+
+		return minutes * 60 + seconds;
+	}
+
+	// =====================================
+	// MANUAL CONTROLS
 	// =====================================
 
 	public void ManualSave()
@@ -289,50 +293,18 @@ public class MapSaving : MonoBehaviour
 		SaveMap();
 	}
 
-	// =====================================
-	// FORCE LOAD BUTTON
-	// =====================================
-
 	public void ManualLoad()
 	{
 		LoadMap();
 	}
 
-	// =====================================
-	// CLEAR SAVE
-	// =====================================
-
-	public void DeleteAllSave()
+	public void ResetMap()
 	{
 		PlayerPrefs.DeleteAll();
 		PlayerPrefs.Save();
 
-		Debug.Log("All Save Deleted");
-	}
-
-	// =====================================
-	// RELOAD SCENE AFTER DELETE
-	// =====================================
-
-	public void ResetMap()
-	{
-		DeleteAllSave();
-
 		SceneManager.LoadScene(
 			SceneManager.GetActiveScene().buildIndex
 		);
-	}
-
-	private float GetSecondsFromText(string text)
-	{
-		// Remove "Respawn: "
-		string time = text.Replace("Respawn: ", "");
-
-		string[] parts = time.Split(':');
-
-		int minutes = int.Parse(parts[0]);
-		int seconds = int.Parse(parts[1]);
-
-		return minutes * 60 + seconds;
 	}
 }

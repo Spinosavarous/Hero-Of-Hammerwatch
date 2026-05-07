@@ -34,7 +34,7 @@ public class EnemyMovement : MonoBehaviour
 	public string enemyId;
 
 	public float currentHp;
-	private float attackTimer;
+	public float attackTimer;
 
 	private bool isDead = false;
 
@@ -49,6 +49,11 @@ public class EnemyMovement : MonoBehaviour
 	void OnDisable()
 	{
 		SaveEnemy();
+	}
+
+	private void FixedUpdate()
+	{
+		attackTimer -= Time.deltaTime;
 	}
 
 	// ---------------- SETTERS ----------------

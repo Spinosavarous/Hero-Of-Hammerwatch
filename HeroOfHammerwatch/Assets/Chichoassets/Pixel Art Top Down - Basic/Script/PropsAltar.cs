@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 namespace Cainos.PixelArtTopDown_Basic
 {
-
     public class PropsAltar : MonoBehaviour
     {
         [SerializeField] Button btn;
@@ -30,6 +29,8 @@ namespace Cainos.PixelArtTopDown_Basic
 
 		private void OnTriggerEnter2D(Collider2D other)
         {
+            if (!other.tag.Equals("Player")) return;
+            
             targetColor.a = 1.0f;
             btn.gameObject.SetActive(true);
 
@@ -39,7 +40,9 @@ namespace Cainos.PixelArtTopDown_Basic
 
         private void OnTriggerExit2D(Collider2D other)
         {
-            targetColor.a = 0.0f;
+			if (!other.tag.Equals("Player")) return;
+
+			targetColor.a = 0.0f;
             btn.gameObject.SetActive(false);
 
             Cursor.lockState = CursorLockMode.Locked;

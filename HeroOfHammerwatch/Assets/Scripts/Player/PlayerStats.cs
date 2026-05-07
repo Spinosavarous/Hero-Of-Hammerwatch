@@ -7,6 +7,7 @@ using UnityEngine.Rendering;
 public class PlayerStats : MonoBehaviour
 {
 	public int maxHealth;
+	public int maxStamina;
 
 	public float speed;
 	public float stamina;
@@ -18,11 +19,12 @@ public class PlayerStats : MonoBehaviour
 
 	public void LoadPlayerStats(int level)
 	{
-		maxHealth = 100 + level * 10;
+		maxHealth = 100 + level * 5;
+		maxStamina = 100 + level * 5;
 		speed = 5f + level * 0.05f;
 		stamina = 100 + level * 5;
 		attack = 25f + level * 2f;
-		defense = 5f + level * 1f;
+		defense = 0;
 		critChance = 0.1f + level * 0.02f;
 	}
 }

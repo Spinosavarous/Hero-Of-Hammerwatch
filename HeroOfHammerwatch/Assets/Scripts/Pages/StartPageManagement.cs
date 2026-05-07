@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,7 +18,6 @@ public class StartPageManagement : MonoBehaviour
 	//login
 	[SerializeField] private Button _loginBtn;
 	[SerializeField] private Button _back1Btn;
-	[SerializeField] private Button _toregisterBtn;
 
     [Header("Pages")]
     [SerializeField] private GameObject _homePage;
@@ -31,9 +32,20 @@ public class StartPageManagement : MonoBehaviour
 	[SerializeField] private TMP_InputField _registerEmail;
 	[SerializeField] private TMP_InputField _registerPassword;
 
+	[SerializeField] private GameObject loading_parent;
+	[SerializeField] private Animator animator;
+	private TextMeshProUGUI loading_text;
+
 	void Start()
     {
-        ButtonFunctionsSetUp();
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
+
+		loading_text = loading_parent.GetComponentInChildren<TextMeshProUGUI>();
+
+		animator.gameObject.SetActive(false);
+
+		ButtonFunctionsSetUp();
     }
 
     void Update()
@@ -45,124 +57,180 @@ public class StartPageManagement : MonoBehaviour
     {
 		_newGameBtn.onClick.AddListener(() =>
 		{
-			Debug.Log("New Game clicked");
+			RunWithClick(() =>
+			{
+				APIManager.Instance.Logout();
 
-			APIManager.Instance.Logout();
-
-			_homePage.SetActive(false);
-			_registerPage.SetActive(true);
-			_loginPage.SetActive(false);
+				_homePage.SetActive(false);
+				_registerPage.SetActive(true);
+				_loginPage.SetActive(false);
+			});
 		});
 
 
 		_contineBtn.onClick.AddListener(() =>
 		{
-			Debug.Log("Continue clicked");
-
-			StartCoroutine(APIManager.Instance.GetProfile((success, profile) =>
+			RunWithClick(() =>
 			{
-				if (success)
-				{
-					Debug.Log("Token valid → Continue game");
-
-					SceneManager.LoadScene("GameScene");
-				}
-				else
-				{
-					Debug.Log("Invalid token → go to login");
-
-					_homePage.SetActive(false);
-					_loginPage.SetActive(true);
-				}
-			}));
+				StartCoroutine(ContinueFlow());
+			});
 		});
 
 		_exitBtn.onClick.AddListener(() =>
 		{
-			Application.Quit();
+			RunWithClick(() =>
+			{
+				Application.Quit();
+			});
 		});
 
 		_registerBtn.onClick.AddListener(() =>
 		{
-			string username = _registerUsername.text;
-			string email = _registerEmail.text;
-			string password = _registerPassword.text;
-
-			StartCoroutine(APIManager.Instance.Register(username, email, password, (success, result) =>
+			RunWithClick(() =>
 			{
-				if (success)
-				{
-					Debug.Log("Registered successfully");
-
-					_registerPage.SetActive(false);
-					_loginPage.SetActive(true);
-				}
-				else
-				{
-					Debug.LogError("Register failed: " + result);
-				}
-			}));
+				StartCoroutine(RegisterFlow());
+			});
 		});
 
 		_loginBtn.onClick.AddListener(() =>
 		{
-			string username = _loginUsername.text;
-			string password = _loginPassword.text;
-
-			StartCoroutine(APIManager.Instance.Login(username, password, (success, result) =>
+			RunWithClick(() =>
 			{
-				if (success)
-				{
-					Debug.Log("Login success");
-
-					StartCoroutine(APIManager.Instance.GetProfile((profileSuccess, profile) =>
-					{
-						if (profileSuccess)
-						{
-							Debug.Log("Profile loaded");
-
-							if (profile.currency == null)
-							{
-								StartCoroutine(APIManager.Instance.InitPlayer(initSuccess =>
-								{
-									Debug.Log("Player initialized");
-
-									SceneManager.LoadScene("GameScene");
-								}));
-							}
-							else
-							{
-								SceneManager.LoadScene("GameScene");
-							}
-						}
-					}));
-				}
-				else
-				{
-					Debug.LogError("Login failed: " + result);
-				}
-			}));
+				StartCoroutine(LoginFlow());
+			});
 		});
 
 		_backBtn.onClick.AddListener(() =>
-        {
-            _homePage.SetActive(true);
-            _registerPage.SetActive(false);
-            _loginPage.SetActive(false);
-        });
+		{
+			RunWithClick(() =>
+			{
+				ShowHome();
+			});
+		});
 
-        _back1Btn.onClick.AddListener(() =>
+		_back1Btn.onClick.AddListener(() =>
         {
-            _homePage.SetActive(true);
-            _registerPage.SetActive(false);
-            _loginPage.SetActive(false);
-        });
-
-        _toregisterBtn.onClick.AddListener(() =>
-        {
-            _homePage.SetActive(false);
-            _registerPage.SetActive(true);
-            _loginPage.SetActive(false);
-        });
+			RunWithClick(() =>
+			{
+				ShowHome();
+			});
+		});
     }
+
+	void ShowHome()
+	{
+		_homePage.SetActive(true);
+		_registerPage.SetActive(false);
+		_loginPage.SetActive(false);
+	}
+
+	void ShowLogin()
+	{
+		_homePage.SetActive(false);
+		_registerPage.SetActive(false);
+		_loginPage.SetActive(true);
+	}
+
+	IEnumerator StartWait(string sceneName)
+	{
+		loading_parent.SetActive(true);
+
+		string baseText = "Loading";
+
+		float timer = 0f;
+		int dots = 0;
+
+		AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
+		op.allowSceneActivation = false;
+
+		while (op.progress < 0.9f)
+		{
+			timer += Time.deltaTime;
+
+			if (timer >= 0.5f)
+			{
+				timer = 0f;
+				dots = (dots + 1) % 4;
+				loading_text.text = baseText + new string('.', dots);
+			}
+
+			yield return null;
+		}
+
+		yield return new WaitForSeconds(0.5f);
+
+		op.allowSceneActivation = true;
+	}
+
+	IEnumerator ContinueFlow()
+	{
+		yield return APIManager.Instance.GetProfile((success, profile) =>
+		{
+			if (!success)
+			{
+				ShowLogin();
+			}
+		});
+
+		yield return APIManager.Instance.LoadAllData(success =>
+		{
+			if (!success)
+				Debug.LogError("Failed loading data");
+		});
+
+		yield return StartWait("Village");
+	}
+	IEnumerator LoginFlow()
+	{
+		yield return APIManager.Instance.Login(
+			_loginUsername.text,
+			_loginPassword.text,
+			(success, result) =>
+			{
+				if (!success)
+					Debug.LogError(result);
+			});
+
+		yield return APIManager.Instance.LoadAllData(success =>
+		{
+			if (!success)
+				Debug.LogError("Failed loading data");
+		});
+
+		yield return StartWait("Village");
+	}
+
+	IEnumerator RegisterFlow()
+	{
+		yield return APIManager.Instance.Register(
+			_registerUsername.text,
+			_registerEmail.text,
+			_registerPassword.text,
+			(success, result) =>
+			{
+				if (!success)
+					Debug.LogError(result);
+			});
+
+		ShowLogin();
+	}
+
+
+	void RunWithClick(Action action)
+	{
+		StartCoroutine(ClickProccess(action));
+	}
+
+	IEnumerator ClickProccess(Action action)
+	{
+		animator.gameObject.SetActive(true);
+		animator.SetBool("isClicked", true);
+
+		yield return new WaitForSeconds(1); // animation duration
+
+		animator.SetBool("isClicked", false);
+
+		action?.Invoke(); // run AFTER animation
+		animator.gameObject.SetActive(false);
+	}
 }

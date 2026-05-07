@@ -1,9 +1,10 @@
+using Newtonsoft.Json;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.Text;
-using System;
-using Newtonsoft.Json;
 
 public class APIManager : MonoBehaviour
 {
@@ -149,8 +150,183 @@ public class APIManager : MonoBehaviour
 			callback(false);
 		}
 	}
+
+	#region Upgrades
+	public IEnumerator GetUpgrades(Action<bool, Upgrades> callback)
+	{
+		var request = CreateRequest("/save/upgrades", "GET");
+
+		yield return request.SendWebRequest();
+
+		if (request.result == UnityWebRequest.Result.Success)
+		{
+			var data = JsonUtility.FromJson<Upgrades>(request.downloadHandler.text);
+
+			callback(true, data);
+		} else
+		{
+			print(request.error);
+			callback(false, null);
+		}
+	}
+
+	public IEnumerator Upgrade(int attackLevel, int armorLevel, int staminaLevel, int healthLevel, Action<bool, Upgrades> callback)
+	{
+		string json = JsonConvert.SerializeObject(new Upgrades
+		{
+			attackLevel = attackLevel,
+			armorLevel = armorLevel,
+			staminaLevel = staminaLevel,
+			healthLevel = healthLevel,
+		});
+
+		print(json);
+
+		var req = CreateRequest("/save/upgrades", "POST", json);
+
+		yield return req.SendWebRequest();
+
+		if (req.result == UnityWebRequest.Result.Success)
+		{
+			callback(true, JsonUtility.FromJson<Upgrades>(req.downloadHandler.text));
+		} else
+		{
+			print(req.error);
+			callback(false, null);
+		}
+	}
+	#endregion
+
+	public IEnumerator GetCurrrecnies(Action<bool, Currency> callback)	
+	{
+		var req = CreateRequest("/save/currencies", "GET");
+
+		yield return req.SendWebRequest();
+
+		if (req.result == UnityWebRequest.Result.Success)
+		{
+			var data = JsonUtility.FromJson<Currency>(req.downloadHandler.text);
+			callback(true, data);
+		} else
+		{
+			print(req.error);
+			callback(false, null);
+		}
+	}
+
+	public IEnumerator SaveWorld(WorldSaveData worldData, Action<bool> callback)
+	{
+		string json = JsonConvert.SerializeObject(worldData);
+
+		Debug.Log("=== SAVE WORLD JSON ===");
+		Debug.Log(json);
+
+		var request = CreateRequest("/save/world", "POST", json);
+
+		yield return request.SendWebRequest();
+
+		Debug.Log("=== SAVE RESPONSE ===");
+		Debug.Log("Code: " + request.responseCode);
+		Debug.Log("Result: " + request.result);
+		Debug.Log("Error: " + request.error);
+		Debug.Log("Body: " + request.downloadHandler.text);
+
+		if (request.responseCode == 401)
+		{
+			Debug.LogError("❌ Unauthorized - TOKEN PROBLEM");
+			callback(false);
+			yield break;
+		}
+
+		if (request.result == UnityWebRequest.Result.Success)
+		{
+			callback(true);
+		}
+		else
+		{
+			callback(false);
+		}
+	}
+
+	public IEnumerator LoadWorld(Action<bool, WorldSaveData> callback)
+	{
+		var request = CreateRequest("/save/load", "GET");
+
+		yield return request.SendWebRequest();
+
+		if (request.result == UnityWebRequest.Result.Success)
+		{
+			Debug.Log("Loaded World: " + request.downloadHandler.text);
+
+			var world = JsonConvert.DeserializeObject<WorldSaveData>(request.downloadHandler.text);
+
+			callback(true, world);
+		}
+		else
+		{
+			Debug.LogError("Load World Error: " + request.error);
+			callback(false, null);
+		}
+	}
+
+	public IEnumerator LoadAllData(Action<bool> callback)
+	{
+		yield return APIManager.Instance.LoadWorld((success, world) =>
+		{
+			if (!success)
+			{
+				callback(false);
+				return;
+			}
+
+			PlayerDataManager.Instance.worldData = world;
+		});
+
+		yield return APIManager.Instance.GetUpgrades((success, upgrades) =>
+		{
+			if (!success)
+			{
+				callback(false);
+				return;
+			}
+
+			PlayerDataManager.Instance.upgrades = upgrades;
+		});
+
+		yield return APIManager.Instance.GetCurrrecnies((success, currency) =>
+		{
+			if (!success)
+			{
+				callback(false);
+				return;
+			}
+
+			PlayerDataManager.Instance.currency = currency;
+		});
+
+		PlayerDataManager.Instance.isLoaded = true;
+
+		callback(true);
+	}
+
+	public IEnumerator SaveWorldCoroutine(WorldSaveData worldData)
+	{
+		string json = JsonConvert.SerializeObject(worldData);
+
+		var request = CreateRequest("/save/world", "POST", json);
+
+		yield return request.SendWebRequest();
+
+		Debug.Log("SAVE RESPONSE: " + request.downloadHandler.text);
+
+		if (request.result != UnityWebRequest.Result.Success)
+		{
+			Debug.LogError("Save failed: " + request.error);
+		}
+	}
 }
 
+#region DTOs
 [Serializable]
 public class RegisterModel
 {
@@ -186,7 +362,6 @@ public class PlayerProfile
 public class Currency
 {
 	public int coins;
-	public int gems;
 }
 
 [Serializable]
@@ -197,3 +372,48 @@ public class Upgrades
 	public int staminaLevel;
 	public int healthLevel;
 }
+
+[Serializable]
+public class WorldSaveData
+{
+	public int level;
+	public int currentXP;
+	public int gold;
+
+	public float hp;
+	public float maxHp;
+
+	public float posX;
+	public float posY;
+
+	public string currentRegion;
+
+	public List<string> openedChests;
+	public List<string> clearedRegions;
+	public List<string> destroyedSpawners;
+
+	public List<EnemyData> enemies;
+	public List<SpawnerData> spawners;
+}
+
+[Serializable]
+public class EnemyData
+{
+	public string id;
+	public string type;
+	public float hp;
+	public float posX;
+	public float posY;
+	public bool dead;
+}
+
+[Serializable]
+public class SpawnerData
+{
+	public string id;
+	public bool destroyed;
+	public float respawnTimer;
+	public int aliveCount;
+	public int currentHP;
+}
+#endregion

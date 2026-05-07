@@ -130,9 +130,11 @@ public class EnemyAI : MonoBehaviour
 	{
 		Debug.Log(enemy.GetStats().enemyName + " attacked player!");
 
+		var dmg = ((enemy.GetStats().damage - player.GetComponent<PlayerMovement>().playerStats.defense) <= 0) ? 0 : enemy.GetStats().damage - player.GetComponent<PlayerMovement>().playerStats.defense;
+
 		animator.SetTrigger("attack");
 		player.GetComponent<PlayerMovement>()
-			.TakeDamage(enemy.GetStats().damage, transform.position);
+			.TakeDamage(enemy.GetStats().damage - player.GetComponent<PlayerMovement>().playerStats.defense, transform.position);
 	}
 
 	private void FacePlayer()

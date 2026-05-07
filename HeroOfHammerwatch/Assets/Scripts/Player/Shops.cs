@@ -12,9 +12,11 @@ public class Shops : MonoBehaviour
 
 	[Header("Collision Objects")]
     [SerializeField] private ShopPlace[] objects;
+
+    private UpgradesHandler upgradesHandler;
     void Start()
     {
-        
+        upgradesHandler = FindAnyObjectByType<UpgradesHandler>();
     }
 
     void Update()
@@ -32,6 +34,8 @@ public class Shops : MonoBehaviour
 
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+
+                upgradesHandler.LoadPage();
 			}
 		}
 	}
@@ -48,5 +52,44 @@ public class Shops : MonoBehaviour
                 Cursor.visible = false;
 			}
         }
+	}
+
+	public void SaveWorldFromGlobal()
+	{
+		var world = PlayerDataManager.Instance.worldData;
+		var player = FindAnyObjectByType<PlayerMovement>();
+
+		if (world == null || player == null)
+		{
+			Debug.LogWarning("Missing world or player");
+			return;
+		}
+
+		// 🔥 ONLY update player-related fields
+		world.level = player.playerLevel;
+		world.currentXP = (int)player.currentXP;
+		world.gold = (int)player.gold;
+
+		world.hp = player.currentHp;
+		world.maxHp = player.playerStats.maxHealth;
+
+		// DO NOT TOUCH:
+		// enemies
+		// spawners
+		// regions
+		// openedChests
+
+		StartCoroutine(APIManager.Instance.SaveWorld(world, success =>
+		{
+			if (success)
+				Debug.Log("Saved from non-map scene");
+			else
+				Debug.LogError("Save failed");
+		}));
+	}
+
+	private void OnApplicationQuit()
+	{
+		SaveWorldFromGlobal();
 	}
 }

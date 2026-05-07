@@ -2,6 +2,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
@@ -14,11 +15,10 @@ public class PlayerMovement : MonoBehaviour
 	[Header("Stats")]
 	[SerializeField] public PlayerStats playerStats;
 	[SerializeField] public float currentHp;
-	[SerializeField] private float attackDamage;
 
 	[Header("Movement UI")]
-	[SerializeField] private Slider stamina;
-	[SerializeField] private Slider healthBar;
+	[SerializeField] public Slider stamina;
+	[SerializeField] public Slider healthBar;
 
 	[SerializeField] private TextMeshProUGUI stamina_text;
 	[SerializeField] private TextMeshProUGUI health_text;
@@ -93,9 +93,8 @@ public class PlayerMovement : MonoBehaviour
 		}
 
 		healthBar.maxValue = playerStats.maxHealth;
-		stamina.maxValue = playerStats.stamina;
-		stamina.value = playerStats.stamina;
-		attackDamage = playerStats.attack;
+		stamina.maxValue = playerStats.maxStamina;
+		stamina.value = playerStats.maxStamina;
 
 		xpSlider.maxValue = GetXPRequired(playerLevel);
 		xpSlider.value = currentXP;
@@ -168,6 +167,8 @@ public class PlayerMovement : MonoBehaviour
 	private void LateUpdate()
 	{
 		healthBar.value = currentHp;
+		healthBar.maxValue = playerStats.maxHealth;
+		stamina.maxValue = playerStats.maxStamina;
 		stamina.value = stamina.value;
 		stamina_text.text = Mathf.RoundToInt(stamina.value).ToString() + "/" + Mathf.RoundToInt(stamina.maxValue).ToString();
 		health_text.text = Mathf.RoundToInt(currentHp).ToString() + "/" + Mathf.RoundToInt(playerStats.maxHealth).ToString();
@@ -188,6 +189,8 @@ public class PlayerMovement : MonoBehaviour
 	public void AddGold(int amount)
 	{
 		gold += amount;
+
+		PlayerDataManager.Instance.worldData.gold = gold;
 	}
 
 	private int GetXPRequired(int level)
@@ -203,16 +206,18 @@ public class PlayerMovement : MonoBehaviour
 
 		Debug.Log("Level Up! Level: " + playerLevel);
 
-		playerStats.maxHealth += 10;
+		playerStats.maxHealth += 5;
 		playerStats.attack += 2f;
-		playerStats.stamina += 5f;
+		playerStats.maxStamina += 5;
+
+		PlayerDataManager.Instance.worldData.level = playerLevel;
+		PlayerDataManager.Instance.worldData.maxHp = playerStats.maxHealth;
+		PlayerDataManager.Instance.worldData.hp = playerStats.maxHealth;
 
 		currentHp = playerStats.maxHealth;
 		healthBar.maxValue = playerStats.maxHealth;
 
-		attackDamage = playerStats.attack;
-
-		stamina.maxValue = playerStats.stamina;
+		stamina.maxValue = playerStats.maxStamina;
 		stamina.value = playerStats.stamina;
 	}
 
@@ -227,6 +232,8 @@ public class PlayerMovement : MonoBehaviour
 		}
 
 		xpSlider.value = currentXP;
+
+		PlayerDataManager.Instance.worldData.currentXP = System.Convert.ToInt16(currentXP);
 	}
 
 	#endregion
@@ -277,6 +284,7 @@ public class PlayerMovement : MonoBehaviour
 
 	#endregion
 
+	#region Attack
 	private void Attack()
 	{
 		isAttacking = true;
@@ -331,7 +339,7 @@ public class PlayerMovement : MonoBehaviour
 
 					if (is_critical)
 					{
-						float critDamage = attackDamage * 2f;
+						float critDamage = playerStats.attack * 2f;
 
 						enemy.TakeDamage(critDamage);
 
@@ -346,10 +354,10 @@ public class PlayerMovement : MonoBehaviour
 					}
 					else
 					{
-						enemy.TakeDamage(attackDamage);
+						enemy.TakeDamage(playerStats.attack);
 
 						ShowDamageText(
-							attackDamage,
+							playerStats.attack,
 							enemy.transform.position + randomTextOffset
 						);
 					}
@@ -363,16 +371,18 @@ public class PlayerMovement : MonoBehaviour
 						0f
 					);
 
-					nest.TakeDamage(attackDamage);
+					nest.TakeDamage(playerStats.attack);
 
 					ShowDamageText(
-						attackDamage,
+						playerStats.attack,
 						nest.transform.position + randomTextOffset
 					);
 				}
 			}
 		}
 	}
+
+	#endregion
 
 	#region DamageText
 	// ---------------- SHOW DAMAGE TEXT ----------------
@@ -590,6 +600,8 @@ public class PlayerMovement : MonoBehaviour
 	public void TakeDamage(float damage, Vector3 enemy)
 	{
 		currentHp -= damage;
+
+		PlayerDataManager.Instance.worldData.hp = currentHp;
 
 		StartCoroutine(KnockBackEffect((transform.position - enemy).normalized * damage * 0.5f));
 

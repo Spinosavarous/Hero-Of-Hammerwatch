@@ -14,7 +14,7 @@ public class MapZSort : MonoBehaviour
 
 	void LateUpdate()
 	{
-		int ySort = Mathf.RoundToInt(-transform.position.y * 100);
+		int ySort = Mathf.RoundToInt(-transform.position.y * 50);
 		rend.sortingOrder = basePriority + ySort + offset;
 	}
 }

@@ -44,6 +44,8 @@ public class StartPageManagement : MonoBehaviour
 		loading_text = loading_parent.GetComponentInChildren<TextMeshProUGUI>();
 
 		animator.gameObject.SetActive(false);
+		//PlayerPrefs.DeleteKey("Tutorial");
+
 
 		ButtonFunctionsSetUp();
     }
@@ -164,38 +166,70 @@ public class StartPageManagement : MonoBehaviour
 
 	IEnumerator ContinueFlow()
 	{
+		bool profileSuccess = false;
+
 		yield return APIManager.Instance.GetProfile((success, profile) =>
 		{
+			profileSuccess = success;
+
 			if (!success)
 			{
 				ShowLogin();
 			}
 		});
 
+		// STOP if not logged in
+		if (!profileSuccess)
+			yield break;
+
+		bool dataLoaded = false;
+
 		yield return APIManager.Instance.LoadAllData(success =>
 		{
+			dataLoaded = success;
+
 			if (!success)
 				Debug.LogError("Failed loading data");
 		});
 
+		if (!dataLoaded)
+			yield break;
+
 		yield return StartWait("Village");
 	}
+
 	IEnumerator LoginFlow()
 	{
+		bool loginSuccess = false;
+
 		yield return APIManager.Instance.Login(
 			_loginUsername.text,
 			_loginPassword.text,
 			(success, result) =>
 			{
+				loginSuccess = success;
+
 				if (!success)
 					Debug.LogError(result);
 			});
 
+		// STOP HERE if login failed
+		if (!loginSuccess)
+			yield break;
+
+		bool dataLoaded = false;
+
 		yield return APIManager.Instance.LoadAllData(success =>
 		{
+			dataLoaded = success;
+
 			if (!success)
 				Debug.LogError("Failed loading data");
 		});
+
+		// STOP if data failed
+		if (!dataLoaded)
+			yield break;
 
 		yield return StartWait("Village");
 	}

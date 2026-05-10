@@ -2,6 +2,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -69,6 +70,9 @@ public class PlayerMovement : MonoBehaviour
 
 	private bool sprintLocked = false;
 
+	private PlayableDirector[] allDirectors;
+	public bool canMove = true;
+
 	void Awake()
 	{
 		rb = GetComponent<Rigidbody2D>();
@@ -113,6 +117,31 @@ public class PlayerMovement : MonoBehaviour
 
 			Time.timeScale = 1f;
 		});
+
+		allDirectors = FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None);
+
+		// Subscribe to their play/stop events
+		foreach (PlayableDirector director in allDirectors)
+		{
+			director.played += OnDirectorPlayed;
+			director.stopped += OnDirectorStopped;
+		}
+	}
+
+	void OnDirectorPlayed(PlayableDirector director)
+	{
+		canMove = false; // Block movement immediately when ANY director plays
+	}
+
+	void OnDirectorStopped(PlayableDirector director)
+	{
+		// Check if ANY other director is still playing
+		foreach (PlayableDirector d in allDirectors)
+		{
+			if (d.state == PlayState.Playing)
+				return; // Still can't move
+		}
+		canMove = true; // All directors stopped, allow movement
 	}
 
 	void OnEnable() => inputActions.Enable();
@@ -120,6 +149,8 @@ public class PlayerMovement : MonoBehaviour
 
 	void Update()
 	{
+		if (!canMove) return;
+
 		if (isMobile)
 		{
 			HandleMobileInput();
@@ -152,6 +183,8 @@ public class PlayerMovement : MonoBehaviour
 
 	void FixedUpdate()
 	{
+		if (!canMove) return;
+
 		Vector2 targetVelocity = movement * currentSpeed;
 
 		rb.linearVelocity = Vector2.MoveTowards(
@@ -166,6 +199,8 @@ public class PlayerMovement : MonoBehaviour
 	// ---------------- UI ----------------
 	private void LateUpdate()
 	{
+		if (!canMove) return;
+
 		healthBar.value = currentHp;
 		healthBar.maxValue = playerStats.maxHealth;
 		stamina.maxValue = playerStats.maxStamina;
@@ -173,6 +208,7 @@ public class PlayerMovement : MonoBehaviour
 		stamina_text.text = Mathf.RoundToInt(stamina.value).ToString() + "/" + Mathf.RoundToInt(stamina.maxValue).ToString();
 		health_text.text = Mathf.RoundToInt(currentHp).ToString() + "/" + Mathf.RoundToInt(playerStats.maxHealth).ToString();
 		xpSlider.value = currentXP;
+		xpSlider.maxValue = GetXPRequired(playerLevel);
 		goldText.text = gold.ToString();
 
 		if (xpText != null)

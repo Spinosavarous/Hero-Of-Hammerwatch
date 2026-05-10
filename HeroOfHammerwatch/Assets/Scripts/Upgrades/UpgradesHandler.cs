@@ -44,6 +44,10 @@ public class UpgradesHandler : MonoBehaviour
 	{
 		if (player.gold >= Convert.ToInt16(upgrades[i].cost.text))
 		{
+			player.gold -= Convert.ToInt16(upgrades[i].cost.text);
+
+			PlayerDataManager.Instance.currency.coins = player.gold;
+
 			upgrades[i].upgrade_count++;
 			StartCoroutine(APIManager.Instance.Upgrade(upgrades[0].upgrade_count, upgrades[1].upgrade_count, upgrades[2].upgrade_count, upgrades[3].upgrade_count, (success, result) =>
 			{

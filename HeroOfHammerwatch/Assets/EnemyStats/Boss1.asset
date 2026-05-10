@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8d65e0f43c788d45b9ce9f22a638767, type: 3}
   m_Name: Boss1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
-  enemyName: BIgger Boy
-  maxHp: 1000
+  enemyName: BIG BAD BOY
+  maxHp: 1500
   moveSpeed: 4
   damage: 60
-  attackRange: 2
+  attackRange: 2.5
   attackCooldown: 2
   mass: 2.2
   knockbackResistance: 0.7

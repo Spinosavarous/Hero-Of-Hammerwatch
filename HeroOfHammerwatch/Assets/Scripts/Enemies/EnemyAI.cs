@@ -36,7 +36,7 @@ public class EnemyAI : MonoBehaviour
 
 	void FixedUpdate()
 	{
-		if (player == null || enemy == null || enemy.tag == "Untagged")
+		if (player == null || enemy == null || enemy.tag == "Untagged" || !player.GetComponent<PlayerMovement>().canMove)
 			return;
 
 		EnemyStats stats = enemy.GetStats();

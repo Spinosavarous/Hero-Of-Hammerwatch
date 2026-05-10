@@ -18,7 +18,7 @@ public class PlayerSortGroup : MonoBehaviour
 
 	void LateUpdate()
 	{
-		int ySort = Mathf.RoundToInt(-transform.position.y * 100);
+		int ySort = Mathf.RoundToInt(-transform.position.y * 50);
 		int rootOrder = basePriority + ySort;
 
 		for (int i = 0; i < rends.Length; i++)

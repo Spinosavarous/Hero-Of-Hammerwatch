@@ -46,4 +46,24 @@ public class BtnClick : MonoBehaviour
 
 		op.allowSceneActivation = true;
 	}
+
+	public void RestartGame()
+	{
+		StartCoroutine(APIManager.Instance.FullReset(success =>
+		{
+			if (success)
+			{
+				Debug.Log("Player data fully reset!");
+
+				PlayerDataManager.Instance.worldData = null;
+
+				// Reload scene or return to menu
+				SceneManager.LoadScene(0);
+			}
+			else
+			{
+				Debug.LogError("Failed to reset save");
+			}
+		}));
+	}
 }

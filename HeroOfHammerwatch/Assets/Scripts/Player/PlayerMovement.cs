@@ -23,6 +23,9 @@ public class PlayerMovement : MonoBehaviour
 
 	[SerializeField] private TextMeshProUGUI stamina_text;
 	[SerializeField] private TextMeshProUGUI health_text;
+	[SerializeField] private GameObject game_over;
+	[SerializeField] private GameObject settings_menu;
+	[SerializeField] private GameObject pause_menu;
 
 	[Header("Map")]
 	[SerializeField] private GameObject map;
@@ -126,6 +129,8 @@ public class PlayerMovement : MonoBehaviour
 			director.played += OnDirectorPlayed;
 			director.stopped += OnDirectorStopped;
 		}
+
+		
 	}
 
 	void OnDirectorPlayed(PlayableDirector director)
@@ -161,6 +166,14 @@ public class PlayerMovement : MonoBehaviour
 			HandlePCInput();
 		}
 
+		if (currentHp <= 0)
+		{
+			game_over.SetActive(true);
+			Time.timeScale = 0f;
+			Cursor.visible = true;
+			Cursor.lockState = CursorLockMode.None;
+		}
+
 		HandleMovementSpeed();
 		UpdateAnimator();
 
@@ -178,6 +191,27 @@ public class PlayerMovement : MonoBehaviour
 			Cursor.visible = map.activeSelf;
 
 			Time.timeScale = map.activeSelf ? 0f : 1f;
+		}
+
+		if (Keyboard.current.escapeKey.wasPressedThisFrame)
+		{
+			bool isAnyMenuActive = settings_menu.activeSelf || pause_menu.activeSelf || map.activeSelf;
+			if (isAnyMenuActive)
+			{
+				settings_menu.SetActive(false);
+				pause_menu.SetActive(false);
+				map.SetActive(false);
+				Cursor.lockState = CursorLockMode.Locked;
+				Cursor.visible = false;
+				Time.timeScale = 1f;
+			}
+			else
+			{
+				pause_menu.SetActive(true);
+				Cursor.lockState = CursorLockMode.None;
+				Cursor.visible = true;
+				Time.timeScale = 0f;
+			}
 		}
 	}
 
@@ -545,6 +579,39 @@ public class PlayerMovement : MonoBehaviour
 
 	#endregion
 
+
+	#region Settings
+	public void SettingsBtn()
+	{
+		settings_menu.SetActive(true);
+		pause_menu.SetActive(false);
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
+		Time.timeScale = 0f;
+	}
+
+	public void BackBtn()
+	{
+		settings_menu.SetActive(false);
+		pause_menu.SetActive(true);
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
+		Time.timeScale = 0f;
+	}
+
+	public void MainMenu()
+	{
+		SceneManager.LoadScene(0);
+	}
+
+	public void ContinueGame()
+	{
+		pause_menu.SetActive(false);
+		Cursor.lockState = CursorLockMode.Locked;
+		Cursor.visible = false;
+		Time.timeScale = 1f;
+	}
+	#endregion
 	private IEnumerator AttackEnd()
 	{
 		yield return new WaitForSeconds(0.1f);
@@ -664,8 +731,14 @@ public class PlayerMovement : MonoBehaviour
 
 	IEnumerator WaitDie()
 	{
-		yield return new WaitForSeconds(2f);
+		yield return new WaitForSeconds(1f);
 		enabled = false;
+		game_over.SetActive(true);
+
+		Time.timeScale = 0f;
+
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
 	}
 
 	private void OnDrawGizmosSelected()

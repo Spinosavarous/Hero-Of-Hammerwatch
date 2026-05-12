@@ -324,6 +324,31 @@ public class APIManager : MonoBehaviour
 			Debug.LogError("Save failed: " + request.error);
 		}
 	}
+
+	// -----------------------------------
+	// FULL RESET SAVE DATA
+	// -----------------------------------
+	public IEnumerator FullReset(Action<bool> callback)
+	{
+		var request = CreateRequest("/save/full-reset", "DELETE");
+
+		yield return request.SendWebRequest();
+
+		Debug.Log("=== FULL RESET RESPONSE ===");
+		Debug.Log("Code: " + request.responseCode);
+		Debug.Log("Result: " + request.result);
+		Debug.Log("Error: " + request.error);
+		Debug.Log("Body: " + request.downloadHandler.text);
+
+		if (request.result == UnityWebRequest.Result.Success)
+		{
+			callback(true);
+		}
+		else
+		{
+			callback(false);
+		}
+	}
 }
 
 #region DTOs

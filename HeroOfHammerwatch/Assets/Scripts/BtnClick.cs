@@ -25,6 +25,11 @@ public class BtnClick : MonoBehaviour
 		float timer = 0f;
 		int dots = 0;
 
+		if (SceneManager.GetActiveScene().name == "GameScene")
+		{
+			MapSaving.Instance.SaveMap();
+		}
+
 		AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
 		op.allowSceneActivation = false;
 

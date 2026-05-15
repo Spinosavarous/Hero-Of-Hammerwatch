@@ -47,39 +47,44 @@ public class UpgradesHandler : MonoBehaviour
 			player.gold -= Convert.ToInt16(upgrades[i].cost.text);
 
 			PlayerDataManager.Instance.currency.coins = player.gold;
+			PlayerDataManager.Instance.worldData.gold = player.gold;
 
 			upgrades[i].upgrade_count++;
 			StartCoroutine(APIManager.Instance.Upgrade(upgrades[0].upgrade_count, upgrades[1].upgrade_count, upgrades[2].upgrade_count, upgrades[3].upgrade_count, (success, result) =>
 			{
 				if (success)
 				{
-					float stat = 0;
-					switch (i)
+					PlayerDataManager.Instance.upgrades = result;
+
+					playerSavings.RecalculateStats();
+
+					upgrades[0].upgrade_count = result.attackLevel;
+					upgrades[1].upgrade_count = result.armorLevel;
+					upgrades[2].upgrade_count = result.staminaLevel;
+					upgrades[3].upgrade_count = result.healthLevel;
+
+					for (int j = 0; j < upgrades.Count; j++)
 					{
-						case 0:
-							player.playerStats.attack += 5;
-
-							stat = player.playerStats.attack;
-							break;
-						case 1:
-							player.playerStats.defense += 3;
-
-							stat = player.playerStats.defense;
-							break;
-						case 2:
-							player.playerStats.maxStamina += 10;
-
-							stat = player.playerStats.stamina;
-							break;
-						case 3:
-							player.playerStats.maxHealth += 10;
-
-							stat = player.playerStats.maxHealth;
-							break;
+						upgrades[j].cost.text =
+							(10 + upgrades[j].upgrade_count *
+							upgrades[j].upgrade_count * 10).ToString();
 					}
 
-					upgrades[i].cost.text = (10 + upgrades[i].upgrade_count * upgrades[i].upgrade_count * 10).ToString();
-					upgrades[i].current_data.text = "Current " + upgrades[i].upgradeName + ": " + stat.ToString();
+					upgrades[0].current_data.text =
+						"Current " + upgrades[0].upgradeName +
+						": " + player.playerStats.attack;
+
+					upgrades[1].current_data.text =
+						"Current " + upgrades[1].upgradeName +
+						": " + player.playerStats.defense;
+
+					upgrades[2].current_data.text =
+						"Current " + upgrades[2].upgradeName +
+						": " + player.playerStats.maxStamina;
+
+					upgrades[3].current_data.text =
+						"Current " + upgrades[3].upgradeName +
+						": " + player.playerStats.maxHealth;
 				}
 			}));
 		}

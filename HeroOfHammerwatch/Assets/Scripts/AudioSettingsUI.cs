@@ -46,8 +46,7 @@ public class AudioSettingsUI : MonoBehaviour
 
 	private void ApplyMusicVolume(float value)
 	{
-		// Example:
-		// AudioManager.Instance.SetMusicVolume(value);
+		AudioManager.Instance.SetMusicVolume(value);
 
 		AudioListener.volume = value;
 	}
@@ -65,8 +64,7 @@ public class AudioSettingsUI : MonoBehaviour
 
 	private void ApplySFXVolume(float value)
 	{
-		// Example:
-		// AudioManager.Instance.SetSFXVolume(value);
+		AudioManager.Instance.SetSFXVolume(value);
 
 		Debug.Log("SFX Volume: " + value);
 	}

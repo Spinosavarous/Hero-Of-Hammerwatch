@@ -69,6 +69,8 @@ public class PlayerSavings : MonoBehaviour
 			player.playerStats.maxStamina += 10 * upgrades.staminaLevel;
 			player.playerStats.attack += 5f * upgrades.attackLevel;
 			player.playerStats.defense += 1f * upgrades.armorLevel;
+
+			print("upgrades added");
 		}
 
 		PlayerDataManager.Instance.isLoaded = true;
@@ -76,33 +78,7 @@ public class PlayerSavings : MonoBehaviour
 
 	//--------------------------------------------------
 	// SAVE PLAYER
-	//--------------------------------------------------
-	public void SavePlayer()
-	{
-		var data = SaveManager.Instance.LoadLocal();
-
-		// if no save exists, create new one
-		if (data == null)
-			data = new SaveData();
-
-		data.level = player.playerLevel;
-		data.currentXP = (int)player.currentXP;
-		data.hp = player.currentHp;
-		data.maxHp = player.playerStats.maxHealth;
-
-		data.gold = player.gold;
-
-
-		if (SceneManager.GetActiveScene().name.Equals("GameScene"))
-		{
-			data.posX = 112;
-			data.posY = -60;
-		}
-
-		SaveManager.Instance.SaveLocal(data);
-
-		Debug.Log("Player Saved");
-	}
+	//-------------------------------------------------
 
 	//--------------------------------------------------
 	// OPTIONAL AUTO SAVE
@@ -112,6 +88,26 @@ public class PlayerSavings : MonoBehaviour
 
 	}
 
+	public void RecalculateStats()
+	{
+		var world = PlayerDataManager.Instance.worldData;
+		var upgrades = PlayerDataManager.Instance.upgrades;
+
+		player.playerStats.LoadPlayerStats(player.playerLevel);
+
+		if (upgrades != null)
+		{
+			player.playerStats.maxHealth += 10 * upgrades.healthLevel;
+			player.playerStats.maxStamina += 10 * upgrades.staminaLevel;
+			player.playerStats.attack += 5f * upgrades.attackLevel;
+			player.playerStats.defense += 1f * upgrades.armorLevel;
+		}
+
+		player.currentHp = Mathf.Min(
+			player.currentHp,
+			player.playerStats.maxHealth
+		);
+	}
 
 	IEnumerator StartWait()
 	{

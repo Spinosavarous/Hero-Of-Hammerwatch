@@ -128,7 +128,7 @@ public class MapSaving : MonoBehaviour
 				.Select(s => s.spawnerId)
 				.ToList(),
 
-			enemies = enemies.Select(e => new EnemyData
+			enemies = enemies.Where(e => e.gameObject.tag == "Enemy").Select(e => new EnemyData
 			{
 				id = e.enemyId,
 				type = e.transform.name.Replace("(Clone)", "").Trim(),
@@ -307,4 +307,20 @@ public class MapSaving : MonoBehaviour
 			SceneManager.GetActiveScene().buildIndex
 		);
 	}
+	void OnApplicationPause(bool pause)
+	{
+		if (pause)
+		{
+			SaveMap();
+		}
+	}
+
+	void OnApplicationFocus(bool focus)
+	{
+		if (!focus)
+		{
+			SaveMap();
+		}
+	}
+
 }

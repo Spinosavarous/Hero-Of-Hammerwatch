@@ -76,6 +76,9 @@ public class PlayerMovement : MonoBehaviour
 	private PlayableDirector[] allDirectors;
 	public bool canMove = true;
 
+	private bool wasMovingLastFrame;
+	private bool walkingAudioPlaying;
+
 	void Awake()
 	{
 		rb = GetComponent<Rigidbody2D>();
@@ -128,9 +131,7 @@ public class PlayerMovement : MonoBehaviour
 		{
 			director.played += OnDirectorPlayed;
 			director.stopped += OnDirectorStopped;
-		}
-
-		
+		}		
 	}
 
 	void OnDirectorPlayed(PlayableDirector director)
@@ -176,6 +177,7 @@ public class PlayerMovement : MonoBehaviour
 
 		HandleMovementSpeed();
 		UpdateAnimator();
+		HandleFootsteps();
 
 		if (attackTimer > 0)
 			attackTimer -= Time.deltaTime;
@@ -212,6 +214,22 @@ public class PlayerMovement : MonoBehaviour
 				Cursor.visible = true;
 				Time.timeScale = 0f;
 			}
+		}
+	}
+
+	private void HandleFootsteps()
+	{
+		bool isMoving = movement.magnitude > 0.1f;
+
+		if (isMoving && !walkingAudioPlaying)
+		{
+			AudioManager.Instance.StartWalking();
+			walkingAudioPlaying = true;
+		}
+		else if (!isMoving && walkingAudioPlaying)
+		{
+			AudioManager.Instance.StopWalking();
+			walkingAudioPlaying = false;
 		}
 	}
 
@@ -360,6 +378,7 @@ public class PlayerMovement : MonoBehaviour
 		isAttacking = true;
 		attackTimer = attackCooldown;
 
+		AudioManager.Instance.PlayAttack();
 
 		animator.Play("Attack2");
 
@@ -413,6 +432,8 @@ public class PlayerMovement : MonoBehaviour
 
 						enemy.TakeDamage(critDamage);
 
+						AudioManager.Instance.PlayBlood();
+
 						ShowDamageText(
 							critDamage,
 							enemy.transform.position + randomTextOffset
@@ -425,6 +446,8 @@ public class PlayerMovement : MonoBehaviour
 					else
 					{
 						enemy.TakeDamage(playerStats.attack);
+
+						AudioManager.Instance.PlayBlood();
 
 						ShowDamageText(
 							playerStats.attack,
@@ -640,6 +663,7 @@ public class PlayerMovement : MonoBehaviour
 		isSprinting = isSprinting && canSprint;
 
 		currentSpeed = isSprinting ? runSpeed : moveSpeed;
+
 	}
 
 	// ---------------- ANIMATION ----------------

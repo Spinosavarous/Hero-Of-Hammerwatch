@@ -160,7 +160,7 @@ public class APIManager : MonoBehaviour
 
 		if (request.result == UnityWebRequest.Result.Success)
 		{
-			var data = JsonUtility.FromJson<Upgrades>(request.downloadHandler.text);
+			var data = JsonConvert.DeserializeObject<Upgrades>(request.downloadHandler.text);
 
 			callback(true, data);
 		} else
@@ -205,7 +205,7 @@ public class APIManager : MonoBehaviour
 
 		if (req.result == UnityWebRequest.Result.Success)
 		{
-			var data = JsonUtility.FromJson<Currency>(req.downloadHandler.text);
+			var data = JsonConvert.DeserializeObject<Currency>(req.downloadHandler.text);
 			callback(true, data);
 		} else
 		{
